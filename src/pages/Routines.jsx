@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext.jsx';
 import Modal from '../components/Modal.jsx';
 import RoutineGrid, { RoutineMiniGrid } from '../components/RoutineGrid.jsx';
 import { createDefaultPattern, getCyclePosition, getRoutineDayInfo, getNextActiveDay } from '../utils/recurrence.js';
+import { Plus, Repeat, Edit3, Trash2 } from 'lucide-react';
 
 const EMOJI_OPTIONS = ['🏋️', '📚', '🧴', '🍳', '💊', '🎵', '🏃', '🧘', '💻', '✍️', '🎨', '🌿', '💤', '🧹', '📋'];
 
@@ -77,24 +78,26 @@ export default function Routines() {
   const today = new Date();
 
   return (
-    <div>
+    <div className="centered-page-container">
       <div className="page-header">
         <h2>Routines</h2>
         <p>Build repeating patterns that work for you</p>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-xl)' }}>
-        <button className="btn btn-primary" onClick={openCreate}>
-          + New Routine
+        <button className="btn btn-primary" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Plus size={15} strokeWidth={2} /> New Routine
         </button>
       </div>
 
       {state.routines.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">↻</div>
+          <Repeat size={40} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }} />
           <h3>No routines yet</h3>
           <p>Create your first routine and build a custom repeating pattern.</p>
-          <button className="btn btn-primary" onClick={openCreate}>+ New Routine</button>
+          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={15} strokeWidth={2} /> New Routine
+          </button>
         </div>
       ) : (
         <div className="card-list">
@@ -112,13 +115,13 @@ export default function Routines() {
                   style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', cursor: 'pointer' }}
                   onClick={() => setExpandedId(isExpanded ? null : routine.id)}
                 >
-                  <div className="dashboard-card-icon" style={{ fontSize: '1.3rem' }}>
+                  <div className="dashboard-card-icon" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                     {routine.emoji || '📋'}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xs)' }}>
-                      <span style={{ fontWeight: 600 }}>{routine.name}</span>
-                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
+                      <span style={{ fontWeight: 500 }}>{routine.name}</span>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                         {routine.cycleLength}-day cycle · {activeDays} active
                       </span>
                     </div>
@@ -129,7 +132,7 @@ export default function Routines() {
                           Active today{dayInfo.label ? ` · ${dayInfo.label}` : ''}
                         </span>
                       ) : nextActive ? (
-                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                           Next in {nextActive.daysUntil}d
                         </span>
                       ) : (
@@ -140,8 +143,12 @@ export default function Routines() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(routine); }}>Edit</button>
-                    <button className="btn btn-ghost btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(routine.id); }}>✕</button>
+                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(routine); }} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Edit3 size={12} strokeWidth={1.75} /> Edit
+                    </button>
+                    <button className="btn btn-ghost btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(routine.id); }}>
+                      <Trash2 size={12} strokeWidth={1.75} />
+                    </button>
                   </div>
                 </div>
 

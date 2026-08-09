@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
+import { useLockIn } from '../context/LockInContext.jsx';
 import Modal from '../components/Modal.jsx';
 import { getDaysRemaining, formatTimeRemaining } from '../utils/helpers.js';
+import { CheckSquare, Plus, Lock, Clock, Edit3, Trash2 } from 'lucide-react';
 
 export default function Tasks() {
   const { state, addTask, toggleTask, deleteTask, editTask } = useApp();
+  const { openLockIn } = useLockIn();
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [filter, setFilter] = useState('pending'); // pending | completed | all
@@ -63,7 +66,7 @@ export default function Tasks() {
   };
 
   return (
-    <div>
+    <div className="centered-page-container">
       <div className="page-header">
         <h2>Tasks</h2>
         <p>Simple one-off tasks to keep track of</p>
@@ -82,18 +85,20 @@ export default function Tasks() {
             </button>
           ))}
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>
-          + New Task
+        <button className="btn btn-primary" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Plus size={15} strokeWidth={2} /> New Task
         </button>
       </div>
 
       {/* Task list */}
       {filteredTasks.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">☑</div>
+          <CheckSquare size={40} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }} />
           <h3>{filter === 'completed' ? 'No completed tasks yet' : filter === 'pending' ? 'No pending tasks' : 'No tasks yet'}</h3>
           <p>Create your first task to get started.</p>
-          <button className="btn btn-primary" onClick={openCreate}>+ New Task</button>
+          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={15} strokeWidth={2} /> New Task
+          </button>
         </div>
       ) : (
         <div className="card-list">
@@ -116,14 +121,26 @@ export default function Tasks() {
               </div>
               <div className="task-row-meta">
                 {task.dueWithinDays && !task.completed && (
-                  <span className={`time-remaining ${getDaysRemaining(task.createdAt, task.dueWithinDays) <= 1 ? 'urgent' : getDaysRemaining(task.createdAt, task.dueWithinDays) <= 3 ? 'warning' : ''}`}>
-                    ⏱ {formatTimeRemaining(getDaysRemaining(task.createdAt, task.dueWithinDays))}
+                  <span className={`time-remaining ${getDaysRemaining(task.createdAt, task.dueWithinDays) <= 1 ? 'urgent' : getDaysRemaining(task.createdAt, task.dueWithinDays) <= 3 ? 'warning' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)' }}>
+                    <Clock size={12} strokeWidth={1.75} /> {formatTimeRemaining(getDaysRemaining(task.createdAt, task.dueWithinDays))}
                   </span>
                 )}
               </div>
               <div className="task-row-actions">
-                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(task)} title="Edit">✎</button>
-                <button className="btn btn-ghost btn-icon btn-danger" onClick={() => deleteTask(task.id)} title="Delete">✕</button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => openLockIn(task.title)}
+                  title="Start Lock In session for this task"
+                  style={{ color: 'var(--accent-secondary)', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Lock size={12} strokeWidth={1.75} /> Lock In
+                </button>
+                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(task)} title="Edit">
+                  <Edit3 size={13} strokeWidth={1.75} />
+                </button>
+                <button className="btn btn-ghost btn-icon btn-danger" onClick={() => deleteTask(task.id)} title="Delete">
+                  <Trash2 size={13} strokeWidth={1.75} />
+                </button>
               </div>
             </div>
           ))}

@@ -1,14 +1,26 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
+import { useLockIn } from '../context/LockInContext.jsx';
 import { ACCENT_THEMES } from '../utils/helpers.js';
 
+import {
+  LayoutDashboard,
+  CheckSquare,
+  Target,
+  Repeat,
+  Settings as SettingsIcon,
+  Lock,
+  Menu,
+  X
+} from 'lucide-react';
+
 const navItems = [
-  { to: '/', icon: '◉', label: 'Dashboard' },
-  { to: '/tasks', icon: '☑', label: 'Tasks' },
-  { to: '/goals', icon: '◎', label: 'Goals' },
-  { to: '/routines', icon: '↻', label: 'Routines' },
-  { to: '/settings', icon: '⚙', label: 'Settings' },
+  { to: '/', Icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/tasks', Icon: CheckSquare, label: 'Tasks' },
+  { to: '/goals', Icon: Target, label: 'Goals' },
+  { to: '/routines', Icon: Repeat, label: 'Routines' },
+  { to: '/settings', Icon: SettingsIcon, label: 'Settings' },
 ];
 
 const BACKGROUND_GIFS = [
@@ -23,6 +35,7 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { state } = useApp();
+  const { openLockIn } = useLockIn();
   const [backgroundUrl, setBackgroundUrl] = useState('');
   
   const accentTheme = state?.settings?.accentColor || 'indigo';
@@ -95,7 +108,7 @@ export default function Layout({ children }) {
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label="Toggle menu"
       >
-        {sidebarOpen ? '✕' : '☰'}
+        {sidebarOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
       </button>
 
       {/* Overlay */}
@@ -112,6 +125,27 @@ export default function Layout({ children }) {
         </div>
 
         <nav className="sidebar-nav">
+          <button
+            type="button"
+            className="nav-link lock-in-sidebar-btn"
+            onClick={() => {
+              closeSidebar();
+              openLockIn();
+            }}
+            style={{
+              background: 'var(--accent-primary-glow)',
+              color: 'var(--accent-secondary)',
+              fontWeight: 600,
+              marginBottom: 'var(--space-sm)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+            }}
+          >
+            <span className="nav-icon" style={{ display: 'flex', alignItems: 'center' }}>
+              <Lock size={18} strokeWidth={1.75} />
+            </span>
+            <span>LOCK IN</span>
+          </button>
+
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -122,7 +156,9 @@ export default function Layout({ children }) {
               }
               onClick={closeSidebar}
             >
-              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                <item.Icon size={18} strokeWidth={1.75} />
+              </span>
               <span>{item.label}</span>
             </NavLink>
           ))}

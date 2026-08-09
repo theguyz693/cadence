@@ -1,7 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
+import { useLockIn } from '../context/LockInContext.jsx';
 import { RoutineMiniGrid } from '../components/RoutineGrid.jsx';
+import FocusTodayWidget from '../components/FocusTodayWidget.jsx';
+import {
+  Lock,
+  Check,
+  Plus,
+  Clock,
+  Target,
+  User,
+  ChevronRight,
+  Sparkles,
+  Calendar
+} from 'lucide-react';
 import {
   getRoutineDayInfo,
   getCyclePosition,
@@ -16,11 +29,19 @@ import {
 } from '../utils/helpers.js';
 
 export default function Dashboard() {
-  const { state, setCompletions, toggleTask } = useApp();
+  const { state, setCompletions, toggleTask, toggleChecklistItem } = useApp();
+  const { openLockIn } = useLockIn();
   const navigate = useNavigate();
   const [flashId, setFlashId] = useState(null);
+  const [time, setTime] = useState(new Date());
 
   const today = new Date();
+
+  // Update time periodically for the dashboard greeting area
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Get today's routines
   const todaysRoutines = state.routines
@@ -46,7 +67,7 @@ export default function Dashboard() {
   const activeGoals = state.goals.filter(g => !g.completed);
 
   // Pending tasks
-  const pendingTasks = state.tasks.filter(t => !t.completed).slice(0, 5);
+  const pendingTasks = state.tasks.filter(t => !t.completed).slice(0, 6);
 
   const handleToggleRoutineCompletion = (routineId) => {
     const newCompletions = toggleRoutineCompletion(state.completions, routineId, today);
@@ -62,7 +83,7 @@ export default function Dashboard() {
   };
 
   const greeting = (() => {
-    const hrs = new Date().getHours();
+    const hrs = time.getHours();
     if (hrs < 12) return 'Good morning';
     if (hrs < 18) return 'Good afternoon';
     return 'Good evening';
@@ -73,218 +94,418 @@ export default function Dashboard() {
   const activeGoalsCount = activeGoals.length;
   const pendingTasksCount = state.tasks.filter(t => !t.completed).length;
 
+  const dateString = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
+
   return (
-    <div>
-      {/* Hero Welcome Card */}
-      <div className="dashboard-hero animate-pop">
-        <div className="dashboard-hero-content">
-          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--accent-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 'var(--space-xs)' }}>
-            {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </div>
-          <h1>
-            {greeting}, <span className="hero-accent">Productive Human</span>
-          </h1>
-          <p>Keep your momentum going. Stay in rhythm.</p>
+    <div className="dashboard-viewport">
+      {/* ============ TOP HERO ROW ============ */}
+      <div className="dashboard-hero-row">
+        <div className="glass-panel bento-greeting glow-border" style={{ justifyContent: 'center', width: '100%' }}>
           
-          <div className="dashboard-hero-stats">
-            <div className="hero-stat">
-              <span className="hero-stat-value">
-                {routinesTotalCount > 0 ? `${routinesDoneCount}/${routinesTotalCount}` : '—'}
+          {/* Top Header Row with Date on Left & Live Time + Account Icon on Right */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--accent-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+              {dateString}
+            </div>
+
+            {/* Time & Account Profile Icon in Top Right */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+              <div className="live-time-display" style={{ fontSize: '2.2rem', lineHeight: 1 }}>
+                {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              </div>
+              <div className="profile-avatar-circle" onClick={() => navigate('/settings')} title="Settings Profile">
+                <User size={18} strokeWidth={1.75} />
+              </div>
+            </div>
+          </div>
+
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--font-size-2xl)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+            {greeting}, <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Productive Human</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-base)', marginTop: '4px' }}>
+            Maintain your tempo. Build your flow. Keep the rhythm.
+          </p>
+
+          <div className="greeting-stats-row" style={{ marginTop: 'var(--space-md)' }}>
+            <div className="greeting-stat-pill" onClick={() => navigate('/routines')} style={{ cursor: 'pointer' }}>
+              <span className="greeting-stat-num">
+                {routinesTotalCount > 0 ? `${routinesDoneCount}/${routinesTotalCount}` : '0/0'}
               </span>
-              <span className="hero-stat-label">Routines</span>
+              <span className="greeting-stat-lbl">Routines</span>
             </div>
-            <div className="hero-stat">
-              <span className="hero-stat-value">{activeGoalsCount}</span>
-              <span className="hero-stat-label">Active Goals</span>
+            <div className="greeting-stat-pill" onClick={() => navigate('/goals')} style={{ cursor: 'pointer' }}>
+              <span className="greeting-stat-num">{activeGoalsCount}</span>
+              <span className="greeting-stat-lbl">Goals Active</span>
             </div>
-            <div className="hero-stat">
-              <span className="hero-stat-value">{pendingTasksCount}</span>
-              <span className="hero-stat-label">Tasks Left</span>
+            <div className="greeting-stat-pill" onClick={() => navigate('/tasks')} style={{ cursor: 'pointer' }}>
+              <span className="greeting-stat-num">{pendingTasksCount}</span>
+              <span className="greeting-stat-lbl">Tasks Left</span>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* ============ TODAY'S ROUTINES ============ */}
-      <div className="section">
-        <div className="section-header">
-          <span className="section-title">Today's Routines</span>
-          <span className="section-title" style={{ color: 'var(--text-tertiary)' }}>
-            {todaysRoutines.filter(r => r.isCompleted).length}/{todaysRoutines.length} done
-          </span>
-        </div>
-
-        {todaysRoutines.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: 'var(--space-sm)', opacity: 0.5 }}>🌿</div>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-              No routines scheduled for today. Enjoy the break!
-            </p>
-          </div>
-        ) : (
-          <div className="card-list">
-            {todaysRoutines.map(({ routine, dayInfo, cyclePos, isCompleted }) => (
-              <div
-                key={routine.id}
-                className={`dashboard-card ${flashId === routine.id ? 'completion-flash' : ''}`}
-              >
-                <div className="dashboard-card-icon">
-                  {routine.emoji || '📋'}
-                </div>
-                <div className="dashboard-card-content">
-                  <div className="dashboard-card-title">{routine.name}</div>
-                  <div className="dashboard-card-subtitle">
-                    {dayInfo.label ? (
-                      <span className="today-action-label">{dayInfo.label}</span>
-                    ) : (
-                      `Day ${cyclePos + 1} of ${routine.cycleLength}`
-                    )}
-                  </div>
-                  <RoutineMiniGrid pattern={routine.pattern} currentIndex={cyclePos} />
-                </div>
-                <div className="dashboard-card-action">
-                  <button
-                    className={`btn ${isCompleted ? 'btn-secondary' : 'btn-success'} btn-sm`}
-                    onClick={() => handleToggleRoutineCompletion(routine.id)}
-                  >
-                    {isCompleted ? '✓ Done' : 'Complete'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ============ UPCOMING ROUTINES ============ */}
-      {restRoutines.length > 0 && (
-        <div className="section">
-          <div className="section-header">
-            <span className="section-title">Upcoming</span>
-          </div>
-          <div className="card-list">
-            {restRoutines.map(({ routine, next }) => (
-              <div key={routine.id} className="dashboard-card" style={{ opacity: 0.7 }}>
-                <div className="dashboard-card-icon" style={{ opacity: 0.6 }}>
-                  {routine.emoji || '📋'}
-                </div>
-                <div className="dashboard-card-content">
-                  <div className="dashboard-card-title">{routine.name}</div>
-                  <div className="dashboard-card-subtitle">
-                    {next.daysUntil === 1 ? 'Tomorrow' : `In ${next.daysUntil} days`}
-                    {next.dayInfo.label && (
-                      <> · <span className="today-action-label">{next.dayInfo.label}</span></>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ============ GOALS / DEADLINES ============ */}
-      <div className="section">
-        <div className="section-header">
-          <span className="section-title">Active Goals</span>
-          {activeGoals.length > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/goals')}>
-              View all →
+            {/* Prominent Lock In CTA Button */}
+            <button
+              className="btn btn-primary"
+              onClick={() => openLockIn()}
+              style={{
+                background: 'var(--accent-gradient)',
+                padding: '8px 20px',
+                borderRadius: 'var(--radius-full)',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                boxShadow: '0 4px 16px var(--accent-primary-glow)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Lock size={15} strokeWidth={2} /> LOCK IN
             </button>
-          )}
+          </div>
+        </div>
+      </div>
+
+      {/* ============ MAIN TWO-COLUMN LAYOUT (LEFT ~60% / RIGHT ~40%) ============ */}
+      <div className="dashboard-main-split">
+        
+        {/* ================= LEFT COLUMN (~60%) ================= */}
+        <div className="dashboard-left-col">
+          
+          {/* 1. TODAY'S ROUTINES */}
+          <div className="glass-panel glow-border bento-todays-routines">
+            <div className="glass-panel-header">
+              <span className="glass-panel-title">Today's Routines</span>
+              <span className="glass-panel-subtitle" style={{ color: 'var(--accent-secondary)', fontWeight: 600 }}>
+                {routinesDoneCount}/{routinesTotalCount} Complete
+              </span>
+            </div>
+
+            {todaysRoutines.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <Sparkles size={28} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }} />
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                  No active routines scheduled for today. Enjoy the peace!
+                </p>
+              </div>
+            ) : (
+              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
+                {todaysRoutines.map(({ routine, dayInfo, cyclePos, isCompleted }) => (
+                  <div
+                    key={routine.id}
+                    className={`dashboard-card ${flashId === routine.id ? 'completion-flash' : ''}`}
+                    style={{ background: 'rgba(22, 22, 34, 0.96)', border: '1px solid rgba(255,255,255,0.04)' }}
+                  >
+                    <div className="dashboard-card-icon" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      {routine.emoji || '📋'}
+                    </div>
+                    <div className="dashboard-card-content">
+                      <div className="dashboard-card-title">{routine.name}</div>
+                      <div className="dashboard-card-subtitle" style={{ marginBottom: 'var(--space-xs)' }}>
+                        {dayInfo.label ? (
+                          <span className="today-action-label">{dayInfo.label}</span>
+                        ) : (
+                          `Day ${cyclePos + 1} of ${routine.cycleLength}`
+                        )}
+                      </div>
+                      <RoutineMiniGrid pattern={routine.pattern} currentIndex={cyclePos} />
+                    </div>
+                    <div className="dashboard-card-action" style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => openLockIn(routine.name)}
+                        title="Lock In on this routine"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        <Lock size={12} strokeWidth={1.75} /> Focus
+                      </button>
+                      <button
+                        className={`btn ${isCompleted ? 'btn-secondary' : 'btn-primary'} btn-sm`}
+                        onClick={() => handleToggleRoutineCompletion(routine.id)}
+                      >
+                        {isCompleted ? <Check size={12} strokeWidth={2} /> : 'Complete'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 2. ROUTINE / WORKOUT SEQUENCER */}
+          <div className="glass-panel glow-border">
+            <div className="glass-panel-header">
+              <div>
+                <span className="glass-panel-title">Routine Sequencer</span>
+                <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', marginTop: '2px', letterSpacing: '0.04em', fontFamily: 'var(--font-mono)' }}>
+                  MULTI-TRACK TEMPO VIEW
+                </div>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/routines')} style={{ fontSize: '10px' }}>
+                Edit Tracks →
+              </button>
+            </div>
+
+            {state.routines.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <Sparkles size={28} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }} />
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                  Create a routine with a repeating pattern to load the sequencer board.
+                </p>
+              </div>
+            ) : (
+              <div className="sequencer-workstation">
+                {state.routines.map(routine => {
+                  const cyclePos = getCyclePosition(routine, today);
+                  const dayInfo = getRoutineDayInfo(routine, today);
+                  
+                  return (
+                    <div 
+                      key={routine.id} 
+                      className={`sequencer-track-row ${dayInfo.active ? 'highlighted-row' : ''}`}
+                    >
+                      <div className="sequencer-track-header">
+                        <span className="sequencer-track-emoji">{routine.emoji}</span>
+                        <div className="sequencer-track-title-group">
+                          <span className="sequencer-track-title" title={routine.name}>{routine.name}</span>
+                          <span className="sequencer-track-subtitle">Cycle: {routine.cycleLength}d</span>
+                        </div>
+                      </div>
+                      <div className="sequencer-track-line">
+                        <div className="sequencer-timeline-track-bar" />
+                        {routine.pattern.map((day, idx) => {
+                          const isCurrent = idx === cyclePos;
+                          const isActive = day.active;
+                          return (
+                            <div
+                              key={idx}
+                              className={`sequencer-track-node ${isActive ? 'active-node' : ''} ${isCurrent ? 'current-node' : ''}`}
+                              title={`D${idx + 1}: ${isActive ? (day.label || 'Active') : 'Rest'}${isCurrent ? ' (Today)' : ''}`}
+                            >
+                              {idx + 1}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 3. UPCOMING ITEMS */}
+          <div className="glass-panel glow-border bento-upcoming">
+            <div className="glass-panel-header">
+              <span className="glass-panel-title">Upcoming Items</span>
+            </div>
+
+            {restRoutines.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                  No rest-state routines configured.
+                </p>
+              </div>
+            ) : (
+              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
+                {restRoutines.map(({ routine, next }) => (
+                  <div 
+                    key={routine.id} 
+                    className="dashboard-card" 
+                    style={{ opacity: 0.7, background: 'rgba(22, 22, 34, 0.96)', border: '1px solid rgba(255,255,255,0.03)' }}
+                  >
+                    <div className="dashboard-card-icon" style={{ opacity: 0.6, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      {routine.emoji || '📋'}
+                    </div>
+                    <div className="dashboard-card-content">
+                      <div className="dashboard-card-title">{routine.name}</div>
+                      <div className="dashboard-card-subtitle">
+                        {next.daysUntil === 1 ? 'Tomorrow' : `In ${next.daysUntil} days`}
+                        {next.dayInfo.label && (
+                          <> · <span className="today-action-label" style={{ fontSize: '9px', padding: '2px 6px' }}>{next.dayInfo.label}</span></>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 4. TASKS CHECKLIST */}
+          <div className="glass-panel glow-border">
+            <div className="glass-panel-header">
+              <span className="glass-panel-title">Tasks Checklist</span>
+              {pendingTasks.length > 0 && (
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate('/tasks')} style={{ fontSize: '10px' }}>
+                  View all →
+                </button>
+              )}
+            </div>
+
+            {pendingTasks.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <Check size={28} strokeWidth={1.5} style={{ color: 'var(--color-success)', marginBottom: 'var(--space-sm)' }} />
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                  All clear! No pending tasks remaining.
+                </p>
+              </div>
+            ) : (
+              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
+                {pendingTasks.map(task => (
+                  <div
+                    key={task.id}
+                    className={`task-row ${flashId === task.id ? 'completion-flash' : ''}`}
+                    style={{ background: 'rgba(22, 22, 34, 0.96)', border: '1px solid rgba(255,255,255,0.04)' }}
+                  >
+                    <div
+                      className={`checklist-checkbox ${task.completed ? 'checked' : ''}`}
+                      onClick={() => handleToggleTask(task.id)}
+                    />
+                    <div className="task-row-content">
+                      <div className={`task-row-title ${task.completed ? 'completed' : ''}`}>
+                        {task.title}
+                      </div>
+                      {task.dueWithinDays && (
+                        <div className="task-row-desc" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={11} strokeWidth={1.75} /> {formatTimeRemaining(getDaysRemaining(task.createdAt, task.dueWithinDays))}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => openLockIn(task.title)}
+                      title="Lock in on this task"
+                      style={{ fontSize: '11px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Lock size={11} strokeWidth={1.75} /> Lock In
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
         </div>
 
-        {activeGoals.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: 'var(--space-sm)', opacity: 0.5 }}>🎯</div>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-              No active goals. Create one to track your progress!
-            </p>
-          </div>
-        ) : (
-          <div className="card-list">
-            {activeGoals.map(goal => {
-              const completed = goal.checklist.filter(i => i.completed).length;
-              const total = goal.checklist.length;
-              const percentage = getCompletionPercentage(completed, total);
-              const daysLeft = getDaysRemaining(goal.createdAt, goal.durationDays);
-              const timeClass = daysLeft <= 1 ? 'urgent' : daysLeft <= 3 ? 'warning' : '';
+        {/* ================= RIGHT COLUMN (~40%): ALL ACTIVE GOALS + FOCUS TODAY ================= */}
+        <div className="dashboard-right-col">
+          
+          {/* FOCUS TODAY WIDGET */}
+          <FocusTodayWidget />
 
-              return (
-                <div
-                  key={goal.id}
-                  className="dashboard-card"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/goals/${goal.id}`)}
-                >
-                  <div className="dashboard-card-icon">🎯</div>
-                  <div className="dashboard-card-content">
-                    <div className="dashboard-card-title">{goal.title}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginTop: 'var(--space-sm)' }}>
-                      <div className="progress-bar" style={{ flex: 1 }}>
+          {/* ACTIVE GOALS PANEL */}
+          <div className="glass-panel active-goals-panel glow-border">
+            <div className="glass-panel-header">
+              <div>
+                <span className="glass-panel-title">Active Goals</span>
+                <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px', fontWeight: 600, letterSpacing: '0.05em', fontFamily: 'var(--font-mono)' }}>
+                  ALL OBJECTIVES
+                </div>
+              </div>
+              <button 
+                className="btn btn-ghost btn-sm" 
+                onClick={() => navigate('/goals')} 
+                style={{ fontSize: '11px', color: 'var(--accent-secondary)' }}
+              >
+                Manage Goals →
+              </button>
+            </div>
+
+            {activeGoals.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-2xl) var(--space-md)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <Target size={36} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }} />
+                <h4 style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-base)', fontWeight: 600, marginBottom: 'var(--space-xs)' }}>
+                  No Active Goals
+                </h4>
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-xs)', maxWidth: '240px', lineHeight: 1.5, marginBottom: 'var(--space-lg)' }}>
+                  Set up a target to track your major milestones and step-by-step progress.
+                </p>
+                <button className="btn btn-primary btn-sm" onClick={() => navigate('/goals')}>
+                  <Plus size={12} strokeWidth={2} /> Create Goal
+                </button>
+              </div>
+            ) : (
+              <div className="active-goals-list">
+                {activeGoals.map(goal => {
+                  const completed = goal.checklist.filter(i => i.completed).length;
+                  const total = goal.checklist.length;
+                  const percentage = getCompletionPercentage(completed, total);
+                  const daysLeft = getDaysRemaining(goal.createdAt, goal.durationDays);
+                  const timeClass = daysLeft <= 1 ? 'urgent' : daysLeft <= 3 ? 'warning' : '';
+
+                  return (
+                    <div 
+                      key={goal.id} 
+                      className="active-goal-card"
+                      onClick={() => navigate(`/goals/${goal.id}`)}
+                    >
+                      <div className="active-goal-card-top">
+                        <span className="active-goal-title">{goal.title}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openLockIn(goal.title);
+                            }}
+                            title="Lock in on this goal"
+                            style={{ fontSize: '10px', padding: '2px 8px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '3px' }}
+                          >
+                            <Lock size={10} strokeWidth={1.75} /> Lock In
+                          </button>
+                          <span className="active-goal-percentage">{percentage}%</span>
+                        </div>
+                      </div>
+
+                      {/* Visual progress bar */}
+                      <div className="progress-bar active-goal-progress-bar">
                         <div
                           className={`progress-bar-fill ${percentage === 100 ? 'complete' : ''}`}
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {completed}/{total}
-                      </span>
-                    </div>
-                    <div className={`time-remaining ${timeClass}`} style={{ marginTop: 'var(--space-xs)' }}>
-                      ⏱ {formatTimeRemaining(daysLeft)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
 
-      {/* ============ TASKS ============ */}
-      <div className="section">
-        <div className="section-header">
-          <span className="section-title">Tasks</span>
-          {pendingTasks.length > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/tasks')}>
-              View all →
-            </button>
-          )}
+                      {/* Counts + Days remaining row */}
+                      <div className="active-goal-meta-row">
+                        <span className="active-goal-count-badge">
+                          {completed}/{total}
+                        </span>
+                        <span className={`active-goal-days-left ${timeClass}`} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Clock size={11} strokeWidth={1.75} /> {formatTimeRemaining(daysLeft)}
+                        </span>
+                      </div>
+
+                      {/* Checklist items preview */}
+                      {goal.checklist && goal.checklist.length > 0 && (
+                        <div className="active-goal-checklist-preview" onClick={(e) => e.stopPropagation()}>
+                          {goal.checklist.slice(0, 4).map(item => (
+                            <div 
+                              key={item.id} 
+                              className={`active-goal-item-row ${item.completed ? 'done' : ''}`}
+                              onClick={() => toggleChecklistItem(goal.id, item.id)}
+                            >
+                              <div className={`mini-checkbox ${item.completed ? 'checked' : ''}`} />
+                              <span className="active-goal-item-text">{item.text}</span>
+                            </div>
+                          ))}
+                          {goal.checklist.length > 4 && (
+                            <div className="active-goal-more-count">
+                              +{goal.checklist.length - 4} more items...
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {pendingTasks.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: 'var(--space-sm)', opacity: 0.5 }}>✅</div>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-              All caught up! No pending tasks.
-            </p>
-          </div>
-        ) : (
-          <div className="card-list">
-            {pendingTasks.map(task => (
-              <div
-                key={task.id}
-                className={`task-row ${flashId === task.id ? 'completion-flash' : ''}`}
-              >
-                <div
-                  className={`checklist-checkbox ${task.completed ? 'checked' : ''}`}
-                  onClick={() => handleToggleTask(task.id)}
-                />
-                <div className="task-row-content">
-                  <div className={`task-row-title ${task.completed ? 'completed' : ''}`}>
-                    {task.title}
-                  </div>
-                  {task.dueWithinDays && (
-                    <div className="task-row-desc">
-                      {formatTimeRemaining(getDaysRemaining(task.createdAt, task.dueWithinDays))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

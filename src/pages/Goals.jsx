@@ -1,7 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
+import { useLockIn } from '../context/LockInContext.jsx';
 import Modal from '../components/Modal.jsx';
+import {
+  Lock,
+  Clock,
+  Edit3,
+  Trash2,
+  Plus,
+  Target,
+  ArrowLeft,
+  Check
+} from 'lucide-react';
 import {
   getDaysRemaining,
   getCompletionPercentage,
@@ -11,6 +22,7 @@ import {
 export default function Goals() {
   const { goalId } = useParams();
   const navigate = useNavigate();
+  const { openLockIn } = useLockIn();
   const {
     state, addGoal, editGoal, deleteGoal, toggleGoal,
     toggleChecklistItem, addChecklistItem, deleteChecklistItem, editChecklistItem,
@@ -102,7 +114,7 @@ export default function Goals() {
   };
 
   return (
-    <div>
+    <div className="centered-page-container">
       <div className="page-header">
         <h2>Goals</h2>
         <p>Track deadlines and progress on larger objectives</p>
@@ -120,17 +132,19 @@ export default function Goals() {
             </button>
           ))}
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>
-          + New Goal
+        <button className="btn btn-primary" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Plus size={15} strokeWidth={2} /> New Goal
         </button>
       </div>
 
       {filteredGoals.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">🎯</div>
+          <Target size={40} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }} />
           <h3>{filter === 'completed' ? 'No completed goals yet' : 'No active goals'}</h3>
           <p>Create a goal with a deadline and checklist to track your progress.</p>
-          <button className="btn btn-primary" onClick={openCreate}>+ New Goal</button>
+          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={15} strokeWidth={2} /> New Goal
+          </button>
         </div>
       ) : (
         <div className="card-list">
@@ -170,15 +184,37 @@ export default function Goals() {
                           />
                         </div>
                       </div>
-                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>
                         {completed}/{total} · {percentage}%
                       </span>
                       {!goal.completed && (
-                        <span className={`time-remaining ${timeClass}`}>
-                          ⏱ {formatTimeRemaining(daysLeft)}
+                        <span className={`time-remaining ${timeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)' }}>
+                          <Clock size={12} strokeWidth={1.75} /> {formatTimeRemaining(daysLeft)}
                         </span>
                       )}
                     </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--space-xs)', alignItems: 'center' }}>
+                    {!goal.completed && (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openLockIn(goal.title);
+                        }}
+                        title="Start Lock In session for this goal"
+                        style={{ color: 'var(--accent-secondary)', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Lock size={12} strokeWidth={1.75} /> Lock In
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-ghost btn-icon"
+                      onClick={(e) => { e.stopPropagation(); openEdit(goal); }}
+                      title="Edit Goal"
+                    >
+                      <Edit3 size={14} strokeWidth={1.75} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -310,10 +346,10 @@ function GoalDetail({
   };
 
   return (
-    <div>
+    <div className="centered-page-container">
       <div style={{ marginBottom: 'var(--space-xl)' }}>
-        <button className="btn btn-ghost" onClick={onBack} style={{ marginBottom: 'var(--space-md)' }}>
-          ← Back to Goals
+        <button className="btn btn-ghost" onClick={onBack} style={{ marginBottom: 'var(--space-md)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <ArrowLeft size={16} strokeWidth={1.75} /> Back to Goals
         </button>
       </div>
 
@@ -338,18 +374,18 @@ function GoalDetail({
                   style={{ width: `${percentage}%` }}
                 />
               </div>
-              <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
+              <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
                 {percentage}%
               </span>
             </div>
 
-            <div style={{ display: 'flex', gap: 'var(--space-xl)', flexWrap: 'wrap', fontSize: 'var(--font-size-sm)' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-xl)', flexWrap: 'wrap', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-mono)' }}>
               <span style={{ color: 'var(--text-secondary)' }}>
                 {completed} / {total} items
               </span>
               {!goal.completed && (
-                <span className={`time-remaining ${timeClass}`}>
-                  ⏱ {formatTimeRemaining(daysLeft)}
+                <span className={`time-remaining ${timeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Clock size={12} strokeWidth={1.75} /> {formatTimeRemaining(daysLeft)}
                 </span>
               )}
             </div>
@@ -358,18 +394,23 @@ function GoalDetail({
           {/* Actions */}
           <div style={{ display: 'flex', gap: 'var(--space-sm)', flexShrink: 0 }}>
             <button
-              className={`btn btn-sm ${goal.completed ? 'btn-secondary' : 'btn-success'}`}
+              className={`btn btn-sm ${goal.completed ? 'btn-secondary' : 'btn-primary'}`}
               onClick={() => toggleGoal(goal.id)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
             >
-              {goal.completed ? 'Reopen' : '✓ Complete'}
+              {goal.completed ? 'Reopen' : <><Check size={12} strokeWidth={2} /> Complete</>}
             </button>
             <button className="btn btn-ghost btn-sm" onClick={() => {
               setEditTitle(goal.title);
               setEditDesc(goal.description);
               setEditDuration(goal.durationDays);
               setShowEdit(true);
-            }}>✎ Edit</button>
-            <button className="btn btn-ghost btn-sm btn-danger" onClick={() => deleteGoal(goal.id)}>✕</button>
+            }} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Edit3 size={12} strokeWidth={1.75} /> Edit
+            </button>
+            <button className="btn btn-ghost btn-sm btn-danger" onClick={() => deleteGoal(goal.id)}>
+              <Trash2 size={12} strokeWidth={1.75} />
+            </button>
           </div>
         </div>
       </div>
@@ -378,7 +419,7 @@ function GoalDetail({
       <div className="card">
         <div className="card-header">
           <span className="card-title">Checklist</span>
-          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
+          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
             {completed}/{total}
           </span>
         </div>
@@ -437,14 +478,14 @@ function GoalDetail({
                     onClick={() => { setEditingItemId(item.id); setEditItemText(item.text); }}
                     title="Edit"
                   >
-                    ✎
+                    <Edit3 size={13} strokeWidth={1.75} />
                   </button>
                   <button
                     className="btn btn-ghost btn-icon btn-danger"
                     onClick={() => deleteChecklistItem(goal.id, item.id)}
                     title="Delete"
                   >
-                    ✕
+                    <Trash2 size={13} strokeWidth={1.75} />
                   </button>
                 </div>
               </div>

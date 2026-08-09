@@ -60,26 +60,23 @@ export default function RoutineGrid({ pattern, onChange, readOnly = false, highl
   };
 
   return (
-    <div className="routine-grid">
+    <div className="sequencer-builder-grid">
       {pattern.map((day, index) => {
         const isHighlighted = highlightIndex === index;
         return (
           <div
             key={index}
-            className={`routine-grid-cell ${day.active ? 'active' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+            className={`sequencer-builder-cell ${day.active ? 'active' : ''} ${isHighlighted ? 'highlighted' : ''}`}
             onClick={() => toggleDay(index)}
             onDoubleClick={() => {
               if (!readOnly && day.active) {
                 setEditingLabel(index);
               }
             }}
-            style={isHighlighted ? {
-              outline: '2px solid var(--color-info)',
-              outlineOffset: '2px',
-            } : undefined}
             title={readOnly ? (day.label || (day.active ? 'Active' : 'Rest')) : 'Click to toggle, double-click to label'}
           >
-            <span className="cell-day">D{index + 1}</span>
+            <span className="cell-num">D{index + 1}</span>
+            <span className="cell-dot-node" />
             {day.active && editingLabel === index ? (
               <input
                 ref={labelRef}
@@ -94,7 +91,7 @@ export default function RoutineGrid({ pattern, onChange, readOnly = false, highl
               />
             ) : (
               day.active && day.label && (
-                <span className="cell-label">{day.label}</span>
+                <span className="cell-tag">{day.label}</span>
               )
             )}
           </div>
@@ -116,6 +113,7 @@ export function RoutineMiniGrid({ pattern, currentIndex }) {
         <div
           key={i}
           className={`routine-mini-cell ${day.active ? 'active' : ''} ${i === currentIndex ? 'current' : ''}`}
+          title={`Day ${i + 1}: ${day.active ? (day.label || 'Active') : 'Rest'}`}
         />
       ))}
     </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import Modal from '../components/Modal.jsx';
 import { ACCENT_THEMES } from '../utils/helpers.js';
+import { AlertTriangle } from 'lucide-react';
 
 export default function Settings() {
   const { state, clearAll, updateSettings } = useApp();
@@ -51,7 +52,7 @@ export default function Settings() {
   };
 
   return (
-    <div>
+    <div className="centered-page-container">
       <div className="page-header">
         <h2>Settings</h2>
         <p>App preferences and data management</p>
@@ -307,7 +308,9 @@ export default function Settings() {
           </>
         }
       >
-        <div className="confirm-icon">⚠️</div>
+        <div className="confirm-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-md)' }}>
+          <AlertTriangle size={36} strokeWidth={1.5} style={{ color: 'var(--color-danger)' }} />
+        </div>
         <p className="confirm-message">
           This will permanently delete all your tasks, goals, routines, and completion history. This action cannot be undone.
         </p>

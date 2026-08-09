@@ -51,20 +51,20 @@ export function formatDate(dateStr) {
 }
 
 export const ACCENT_THEMES = {
-  indigo: {
-    name: 'Indigo Sunset',
-    primary: '#7c6bf5',
-    secondary: '#a78bfa',
-    hover: '#8e7ff7',
-    glow: 'rgba(124, 107, 245, 0.15)',
-    gradient: 'linear-gradient(135deg, #7c6bf5, #a78bfa, #c4b5fd)',
+  amber: {
+    name: 'Sunset Amber',
+    primary: '#FF8A3D',
+    secondary: '#FFB454',
+    hover: '#FF9E54',
+    glow: 'rgba(255, 138, 61, 0.22)',
+    gradient: 'linear-gradient(135deg, #FF8A3D, #FFB454)',
   },
   emerald: {
     name: 'Emerald Mint',
     primary: '#10b981',
     secondary: '#34d399',
     hover: '#059669',
-    glow: 'rgba(16, 185, 129, 0.15)',
+    glow: 'rgba(16, 185, 129, 0.2)',
     gradient: 'linear-gradient(135deg, #10b981, #34d399, #a7f3d0)',
   },
   rose: {
@@ -72,7 +72,7 @@ export const ACCENT_THEMES = {
     primary: '#ec4899',
     secondary: '#f472b6',
     hover: '#db2777',
-    glow: 'rgba(236, 72, 153, 0.15)',
+    glow: 'rgba(236, 72, 153, 0.2)',
     gradient: 'linear-gradient(135deg, #ec4899, #f472b6, #fbcfe8)',
   },
   ocean: {
@@ -80,24 +80,24 @@ export const ACCENT_THEMES = {
     primary: '#3b82f6',
     secondary: '#60a5fa',
     hover: '#2563eb',
-    glow: 'rgba(59, 130, 246, 0.15)',
+    glow: 'rgba(59, 130, 246, 0.2)',
     gradient: 'linear-gradient(135deg, #3b82f6, #60a5fa, #bfdbfe)',
   },
-  amber: {
-    name: 'Sunset Amber',
-    primary: '#f59e0b',
-    secondary: '#fbbf24',
-    hover: '#d97706',
-    glow: 'rgba(245, 158, 11, 0.15)',
-    gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24, #fde68a)',
+  indigo: {
+    name: 'Indigo Violet',
+    primary: '#7c6bf5',
+    secondary: '#a78bfa',
+    hover: '#8e7ff7',
+    glow: 'rgba(124, 107, 245, 0.2)',
+    gradient: 'linear-gradient(135deg, #7c6bf5, #a78bfa, #c4b5fd)',
   },
   teal: {
-    name: 'Nordic Frost',
+    name: 'Nordic Cyan',
     primary: '#14b8a6',
-    secondary: '#2dd4bf',
+    secondary: '#5EEAD4',
     hover: '#0d9488',
-    glow: 'rgba(20, 184, 166, 0.15)',
-    gradient: 'linear-gradient(135deg, #14b8a6, #2dd4bf, #ccfbf1)',
+    glow: 'rgba(94, 234, 212, 0.2)',
+    gradient: 'linear-gradient(135deg, #14b8a6, #5EEAD4, #ccfbf1)',
   }
 };
 
