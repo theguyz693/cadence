@@ -15,6 +15,10 @@ export async function connectDb() {
     throw new Error('MONGODB_URI is not set in environment variables');
   }
 
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
+
   await mongoose.connect(uri, { dbName });
   console.log('✓ Connected to MongoDB Atlas (Mongoose)');
 }

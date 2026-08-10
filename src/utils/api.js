@@ -3,7 +3,7 @@
  * Includes JWT Token handling.
  */
 
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
 export function getToken() {
   return localStorage.getItem('cadence_token');
@@ -28,12 +28,22 @@ async function request(path, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers,
-  });
+  const endpoint = path.startsWith('/') ? path : `/${path}`;
+  let res;
+
+  try {
+    res = await fetch(`${BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    throw new Error('Unable to connect to backend server. Make sure backend is running and VITE_API_URL is configured.');
+  }
 
   if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error('API server unreachable or endpoint not found (404). If deployed on GitHub Pages/Vercel, deploy your Express server (e.g. Render/Railway) and set VITE_API_URL.');
+    }
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `API error ${res.status}`);
   }
