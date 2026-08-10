@@ -1,6 +1,6 @@
 /**
  * Express application configuration for Cadence.
- * Exported for standalone server (server/index.js) and Vercel serverless function (api/index.js).
+ * Exported for standalone server (server/index.js) and Vercel serverless function (api/[...path].js).
  */
 import express from 'express';
 import cors from 'cors';
@@ -32,20 +32,34 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Public Routes
-app.use('/api/auth', authRouter);
-
-// Health check
-app.get('/api/health', (req, res) => {
+// Health check endpoints
+const healthHandler = (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+};
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
+
+// Public Auth Routes
+app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
 
 // Protected API Routes (Requires Auth)
 app.use('/api/tasks', authMiddleware, tasksRouter);
+app.use('/tasks', authMiddleware, tasksRouter);
+
 app.use('/api/goals', authMiddleware, goalsRouter);
+app.use('/goals', authMiddleware, goalsRouter);
+
 app.use('/api/routines', authMiddleware, routinesRouter);
+app.use('/routines', authMiddleware, routinesRouter);
+
 app.use('/api/completions', authMiddleware, completionsRouter);
+app.use('/completions', authMiddleware, completionsRouter);
+
 app.use('/api/settings', authMiddleware, settingsRouter);
+app.use('/settings', authMiddleware, settingsRouter);
+
 app.use('/api/focus-sessions', authMiddleware, focusSessionsRouter);
+app.use('/focus-sessions', authMiddleware, focusSessionsRouter);
 
 export default app;
