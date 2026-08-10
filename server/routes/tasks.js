@@ -1,15 +1,12 @@
-/**
- * Tasks REST API routes.
- */
 import { Router } from 'express';
-import { getDb } from '../db.js';
+import Task from '../models/Task.js';
 
 const router = Router();
 
-// GET /api/tasks — list all tasks
+// GET /api/tasks — list user tasks
 router.get('/', async (req, res) => {
   try {
-    const tasks = await getDb().collection('tasks').find().toArray();
+    const tasks = await Task.find({ userId: req.userId }).lean();
     res.json(tasks);
   } catch (err) {
     console.error('GET /api/tasks error:', err);
@@ -20,11 +17,12 @@ router.get('/', async (req, res) => {
 // POST /api/tasks — create a task
 router.post('/', async (req, res) => {
   try {
-    const task = req.body;
-    if (!task.id || !task.title) {
+    const taskData = req.body;
+    if (!taskData.id || !taskData.title) {
       return res.status(400).json({ error: 'Task requires id and title' });
     }
-    await getDb().collection('tasks').insertOne(task);
+    const task = new Task({ ...taskData, userId: req.userId });
+    await task.save();
     res.status(201).json(task);
   } catch (err) {
     console.error('POST /api/tasks error:', err);
@@ -36,17 +34,20 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-    // Remove _id from updates if present (MongoDB doesn't allow modifying _id)
+    const updates = { ...req.body };
     delete updates._id;
-    const result = await getDb().collection('tasks').updateOne(
-      { id },
-      { $set: updates }
+    delete updates.userId;
+
+    const task = await Task.findOneAndUpdate(
+      { id, userId: req.userId },
+      { $set: updates },
+      { new: true }
     );
-    if (result.matchedCount === 0) {
+
+    if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    res.json({ success: true });
+    res.json({ success: true, task });
   } catch (err) {
     console.error('PUT /api/tasks/:id error:', err);
     res.status(500).json({ error: 'Failed to update task' });
@@ -57,7 +58,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await getDb().collection('tasks').deleteOne({ id });
+    const result = await Task.deleteOne({ id, userId: req.userId });
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }

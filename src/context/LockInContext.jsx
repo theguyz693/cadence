@@ -7,15 +7,36 @@ import {
   recordCompletedSession,
   getTodayFocusStats,
 } from '../utils/lockInStorage.js';
+import { useAuth } from './AuthContext.jsx';
+import { fetchFocusSessions, createFocusSession } from '../utils/api.js';
 
 const LockInContext = createContext(null);
 
 export function LockInProvider({ children }) {
+  const { user } = useAuth();
   const [activeSession, setActiveSession] = useState(loadActiveSession);
   const [showSetup, setShowSetup] = useState(false);
   const [presetTaskTitle, setPresetTaskTitle] = useState('');
   const [history, setHistory] = useState(loadFocusHistory);
   const [remainingSec, setRemainingSec] = useState(0);
+
+  // Fetch user focus history from API on login
+  useEffect(() => {
+    async function loadHistory() {
+      if (!user) {
+        setHistory([]);
+        return;
+      }
+      try {
+        const apiSessions = await fetchFocusSessions();
+        setHistory(apiSessions);
+      } catch (err) {
+        console.warn('Failed to load focus history from API:', err.message);
+        setHistory(loadFocusHistory());
+      }
+    }
+    loadHistory();
+  }, [user]);
 
   // Sync activeSession to localStorage
   useEffect(() => {
@@ -73,21 +94,37 @@ export function LockInProvider({ children }) {
   }, [activeSession, computeRemainingSec]);
 
   // Handle when session timer hits 0
-  const handleSessionFinished = (session) => {
+  const handleSessionFinished = async (session) => {
     if (session.status === 'completed') return;
 
     if (!session.isBreak) {
-      // Record completed work session to history
-      const updatedHistory = recordCompletedSession({
+      const sessionData = {
         taskTitle: session.taskTitle,
         durationSec: session.durationSec,
+        completedAt: new Date().toISOString(),
         isBreak: false,
-      });
-      setHistory(updatedHistory);
+      };
+
+      // Record to local storage
+      const updatedHistory = recordCompletedSession(sessionData);
+
+      // Record to API if authenticated
+      if (user) {
+        try {
+          const apiSession = await createFocusSession(sessionData);
+          setHistory(prev => [apiSession, ...prev]);
+        } catch (err) {
+          console.warn('Failed to save focus session to API:', err.message);
+          setHistory(updatedHistory);
+        }
+      } else {
+        setHistory(updatedHistory);
+      }
     }
 
     setActiveSession(prev => prev ? { ...prev, status: 'completed' } : null);
   };
+
 
   // Action: Open setup modal (optionally prefilled with a task title)
   const openLockIn = useCallback((title = '') => {

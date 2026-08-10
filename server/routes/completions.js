@@ -1,18 +1,12 @@
-/**
- * Completions REST API routes.
- * Completions are stored as a single document: { _docId: 'completions', data: { ... } }
- * This mirrors the current localStorage shape: { [routineId]: { [dateStr]: true } }
- */
 import { Router } from 'express';
-import { getDb } from '../db.js';
+import Completion from '../models/Completion.js';
 
 const router = Router();
-const DOC_ID = 'completions';
 
-// GET /api/completions — get all completions
+// GET /api/completions — get user completions
 router.get('/', async (req, res) => {
   try {
-    const doc = await getDb().collection('completions').findOne({ _docId: DOC_ID });
+    const doc = await Completion.findOne({ userId: req.userId }).lean();
     res.json(doc?.data || {});
   } catch (err) {
     console.error('GET /api/completions error:', err);
@@ -20,14 +14,14 @@ router.get('/', async (req, res) => {
   }
 });
 
-// PUT /api/completions — replace the full completions object
+// PUT /api/completions — replace user completions object
 router.put('/', async (req, res) => {
   try {
     const data = req.body;
-    await getDb().collection('completions').updateOne(
-      { _docId: DOC_ID },
-      { $set: { _docId: DOC_ID, data } },
-      { upsert: true }
+    await Completion.findOneAndUpdate(
+      { userId: req.userId },
+      { $set: { userId: req.userId, data } },
+      { upsert: true, new: true }
     );
     res.json({ success: true });
   } catch (err) {

@@ -1,15 +1,12 @@
-/**
- * Routines REST API routes.
- */
 import { Router } from 'express';
-import { getDb } from '../db.js';
+import Routine from '../models/Routine.js';
 
 const router = Router();
 
-// GET /api/routines — list all routines
+// GET /api/routines — list user routines
 router.get('/', async (req, res) => {
   try {
-    const routines = await getDb().collection('routines').find().toArray();
+    const routines = await Routine.find({ userId: req.userId }).lean();
     res.json(routines);
   } catch (err) {
     console.error('GET /api/routines error:', err);
@@ -20,11 +17,12 @@ router.get('/', async (req, res) => {
 // POST /api/routines — create a routine
 router.post('/', async (req, res) => {
   try {
-    const routine = req.body;
-    if (!routine.id || !routine.name) {
+    const routineData = req.body;
+    if (!routineData.id || !routineData.name) {
       return res.status(400).json({ error: 'Routine requires id and name' });
     }
-    await getDb().collection('routines').insertOne(routine);
+    const routine = new Routine({ ...routineData, userId: req.userId });
+    await routine.save();
     res.status(201).json(routine);
   } catch (err) {
     console.error('POST /api/routines error:', err);
@@ -36,16 +34,20 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
     delete updates._id;
-    const result = await getDb().collection('routines').updateOne(
-      { id },
-      { $set: updates }
+    delete updates.userId;
+
+    const routine = await Routine.findOneAndUpdate(
+      { id, userId: req.userId },
+      { $set: updates },
+      { new: true }
     );
-    if (result.matchedCount === 0) {
+
+    if (!routine) {
       return res.status(404).json({ error: 'Routine not found' });
     }
-    res.json({ success: true });
+    res.json({ success: true, routine });
   } catch (err) {
     console.error('PUT /api/routines/:id error:', err);
     res.status(500).json({ error: 'Failed to update routine' });
@@ -56,7 +58,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await getDb().collection('routines').deleteOne({ id });
+    const result = await Routine.deleteOne({ id, userId: req.userId });
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Routine not found' });
     }

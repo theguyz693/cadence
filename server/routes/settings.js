@@ -1,12 +1,14 @@
-/**
- * Settings REST API routes.
- * Settings are stored as a single document: { _docId: 'settings', ...settingsFields }
- */
 import { Router } from 'express';
-import { getDb } from '../db.js';
+import Settings from '../models/Settings.js';
 
 const router = Router();
-const DOC_ID = 'user_settings';
+
+const DEFAULT_FOCUS_SOUNDS = [
+  { id: 'sound_1', name: 'Deep Focus Ambient', src: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', type: 'preset', isDefault: true },
+  { id: 'sound_2', name: 'Rain & Thunderstorm', src: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_8b71d9d970.mp3?filename=rain-and-thunder-16705.mp3', type: 'preset', isDefault: false },
+  { id: 'sound_3', name: 'Night City Lo-Fi', src: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=chill-lofi-song-8444.mp3', type: 'preset', isDefault: false },
+  { id: 'sound_4', name: 'Synth Meditation Drone', src: 'synth', type: 'preset', isDefault: false },
+];
 
 const DEFAULT_SETTINGS = {
   theme: 'dark',
@@ -21,17 +23,19 @@ const DEFAULT_SETTINGS = {
     { id: 'slot2', name: 'Pixel Cat', url: 'https://media.giphy.com/media/VPlgUzkP5yPba/giphy.gif' },
     { id: 'slot3', name: 'Sunset Train', url: 'https://media.giphy.com/media/43F752JzgNn44/giphy.gif' }
   ],
+  focusSounds: DEFAULT_FOCUS_SOUNDS,
+  defaultSoundId: 'sound_1',
 };
 
-// GET /api/settings — get settings
+
+// GET /api/settings — get user settings
 router.get('/', async (req, res) => {
   try {
-    const doc = await getDb().collection('settings').findOne({ _docId: DOC_ID });
+    const doc = await Settings.findOne({ userId: req.userId }).lean();
     if (!doc) {
       return res.json(DEFAULT_SETTINGS);
     }
-    // Strip internal fields
-    const { _id, _docId, ...settings } = doc;
+    const { _id, userId, __v, ...settings } = doc;
     res.json({ ...DEFAULT_SETTINGS, ...settings });
   } catch (err) {
     console.error('GET /api/settings error:', err);
@@ -39,16 +43,18 @@ router.get('/', async (req, res) => {
   }
 });
 
-// PUT /api/settings — merge-update settings
+// PUT /api/settings — update user settings
 router.put('/', async (req, res) => {
   try {
-    const updates = req.body;
+    const updates = { ...req.body };
     delete updates._id;
-    delete updates._docId;
-    await getDb().collection('settings').updateOne(
-      { _docId: DOC_ID },
-      { $set: { _docId: DOC_ID, ...updates } },
-      { upsert: true }
+    delete updates.userId;
+    delete updates.__v;
+
+    await Settings.findOneAndUpdate(
+      { userId: req.userId },
+      { $set: { userId: req.userId, ...updates } },
+      { upsert: true, new: true }
     );
     res.json({ success: true });
   } catch (err) {
@@ -57,10 +63,10 @@ router.put('/', async (req, res) => {
   }
 });
 
-// DELETE /api/settings — reset to defaults
+// DELETE /api/settings — reset user settings
 router.delete('/', async (req, res) => {
   try {
-    await getDb().collection('settings').deleteOne({ _docId: DOC_ID });
+    await Settings.deleteOne({ userId: req.userId });
     res.json({ success: true, settings: DEFAULT_SETTINGS });
   } catch (err) {
     console.error('DELETE /api/settings error:', err);

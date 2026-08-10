@@ -3,6 +3,7 @@ import { loadData, saveData, clearData } from '../utils/storage.js';
 import { generateId } from '../utils/helpers.js';
 import { createDefaultPattern } from '../utils/recurrence.js';
 import * as api from '../utils/api.js';
+import { useAuth } from './AuthContext.jsx';
 
 const AppContext = createContext(null);
 
@@ -320,55 +321,67 @@ async function syncToApi(action, newState, prevState) {
   }
 }
 
+const emptyState = {
+  tasks: [],
+  goals: [],
+  routines: [],
+  completions: {},
+  settings: {
+    theme: 'dark',
+    accentColor: 'indigo',
+    showBanner: true,
+    bgBlur: 25,
+    bgDim: 60,
+    activeBackground: 'random',
+    customBackgrounds: [],
+  },
+};
+
 export function AppProvider({ children }) {
-  // Initialize from localStorage for instant render, then hydrate from API
+
+  const { user } = useAuth();
   const [state, dispatch] = useReducer(appReducer, null, loadData);
   const [loading, setLoading] = useState(true);
   const [apiAvailable, setApiAvailable] = useState(true);
   const prevStateRef = useRef(state);
 
-  // Custom dispatch that also syncs to API
-  const syncDispatch = useCallback((action) => {
-    dispatch((prevState) => {
-      // useReducer doesn't give us access to prev state easily with a
-      // function dispatch, so we use the ref approach below instead.
-      return action;
-    });
-    dispatch(action);
-  }, []);
-
-  // Actually we need a simpler approach: dispatch normally, then sync in useEffect.
-  // We'll track actions via a ref queue.
   const actionQueueRef = useRef([]);
 
   const trackedDispatch = useCallback((action) => {
-    prevStateRef.current = state; // capture state before dispatch
+    prevStateRef.current = state;
     actionQueueRef.current.push({ action, prevState: state });
     dispatch(action);
   }, [state]);
 
-  // Hydrate from API on mount
+  // Hydrate from API whenever user logs in or mounts
   useEffect(() => {
     let cancelled = false;
     async function hydrate() {
+      if (!user) {
+        dispatch({ type: 'HYDRATE', payload: emptyState });
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       try {
         const data = await api.fetchAllData();
         if (!cancelled) {
           dispatch({ type: 'HYDRATE', payload: data });
-          // Also cache to localStorage
           saveData(data);
           setApiAvailable(true);
         }
       } catch (err) {
-        console.warn('API not available, using localStorage cache:', err.message);
+        console.warn('API fetch failed:', err.message);
         setApiAvailable(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
+
     hydrate();
     return () => { cancelled = true; };
-  }, []);
+  }, [user]);
 
   // Sync to localStorage on every state change (write-through cache)
   useEffect(() => {

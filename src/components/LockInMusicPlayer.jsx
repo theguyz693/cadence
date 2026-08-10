@@ -1,214 +1,272 @@
-import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Volume2, VolumeX, Music, SkipForward } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext.jsx';
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Music,
+  SkipForward,
+  SkipBack,
+  AlertCircle,
+  Plus
+} from 'lucide-react';
 
-const TRACKS = [
-  { id: 'ambient', name: 'Ambient Focus', src: '/audio/ambient.mp3' },
-  { id: 'focus', name: 'Deep Focus', src: '/audio/focus.mp3' },
-  { id: 'night', name: 'Night Rain', src: '/audio/night.mp3' },
+const DEFAULT_FOCUS_SOUNDS = [
+  { id: 'sound_1', name: 'Deep Focus Ambient', src: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', type: 'preset' },
+  { id: 'sound_2', name: 'Rain & Thunderstorm', src: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_8b71d9d970.mp3?filename=rain-and-thunder-16705.mp3', type: 'preset' },
+  { id: 'sound_3', name: 'Night City Lo-Fi', src: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=chill-lofi-song-8444.mp3', type: 'preset' },
+  { id: 'sound_4', name: 'Synth Meditation Drone', src: 'synth', type: 'preset' },
 ];
 
 export default function LockInMusicPlayer() {
-  const [currentTrackIdx, setCurrentTrackIdx] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { state } = useApp();
+  const navigate = useNavigate();
+
+  const sounds = state?.settings?.focusSounds && state.settings.focusSounds.length > 0
+    ? state.settings.focusSounds
+    : DEFAULT_FOCUS_SOUNDS;
+
+  const defaultSoundId = state?.settings?.defaultSoundId;
+
+  // Initialize track index based on defaultSoundId
+  const initialIdx = Math.max(0, sounds.findIndex(s => s.id === defaultSoundId));
+  const [trackIndex, setTrackIndex] = useState(initialIdx);
+
+  const [isPlaying, setIsPlaying] = useState(false); // Music OFF by default when entering Lock In
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [audioError, setAudioError] = useState(false);
 
   const audioRef = useRef(null);
-  const synthContextRef = useRef(null);
+  const synthCtxRef = useRef(null);
 
-  const activeTrack = TRACKS[currentTrackIdx] || TRACKS[0];
+  const currentSound = sounds[trackIndex] || sounds[0];
 
-  // Initialize Audio instance
+  // Helper to stop synth audio
+  const stopSynth = useCallback(() => {
+    if (synthCtxRef.current) {
+      try {
+        synthCtxRef.current.close().catch(() => {});
+      } catch {}
+      synthCtxRef.current = null;
+    }
+  }, []);
+
+  // Helper to start synth fallback drone audio
+  const startSynth = useCallback(() => {
+    try {
+      stopSynth();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      synthCtxRef.current = ctx;
+
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(220, ctx.currentTime);
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(277.18, ctx.currentTime);
+
+      const targetGain = isMuted ? 0 : volume * 0.08;
+      gain.gain.setValueAtTime(targetGain, ctx.currentTime);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc1.start();
+      osc2.start();
+    } catch {
+      // Ignore synth errors
+    }
+  }, [volume, isMuted, stopSynth]);
+
+  // Clean up single audio instance on unmount (leaving Lock In)
   useEffect(() => {
     const audio = new Audio();
     audio.loop = true;
-    audio.preload = 'metadata';
     audioRef.current = audio;
 
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime || 0);
+    const handleError = () => {
+      setAudioError(true);
+      setIsPlaying(false);
     };
 
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration || 0);
-    };
-
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('error', handleError);
 
     return () => {
       audio.pause();
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      if (synthContextRef.current) {
-        synthContextRef.current.close().catch(() => {});
-      }
+      audio.removeEventListener('error', handleError);
+      audio.src = '';
+      audioRef.current = null;
+      stopSynth();
     };
-  }, []);
+  }, [stopSynth]);
 
-  // Update track src
+  // Sync volume & mute state to audio element / synth
   useEffect(() => {
-    if (!audioRef.current) return;
-    const audio = audioRef.current;
-    const wasPlaying = isPlaying;
-
-    audio.src = activeTrack.src;
-    audio.load();
-    setCurrentTime(0);
-
-    if (wasPlaying) {
-      audio.play().catch(() => {
-        startSynthFallback();
-      });
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
     }
-  }, [currentTrackIdx]);
-
-  // Handle volume & mute changes
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = isMuted ? 0 : volume;
+    if (synthCtxRef.current && synthCtxRef.current.state === 'running') {
+      try {
+        const gainNode = synthCtxRef.current.destination;
+        if (gainNode) {
+          // Adjust volume on synth
+        }
+      } catch {}
+    }
   }, [volume, isMuted]);
 
-  // Web Audio synth fallback if HTML5 audio fails
-  const startSynthFallback = () => {
-    try {
-      if (!synthContextRef.current) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-        synthContextRef.current = ctx;
+  // Handle Track Switching
+  const changeTrack = (newIdx) => {
+    setAudioError(false);
+    const validIdx = (newIdx + sounds.length) % sounds.length;
+    const targetSound = sounds[validIdx];
 
-        const osc1 = ctx.createOscillator();
-        const osc2 = ctx.createOscillator();
-        const gain = ctx.createGain();
+    // Stop current audio cleanly
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    stopSynth();
 
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(220, ctx.currentTime); // A3
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(277.18, ctx.currentTime); // C#4
+    setTrackIndex(validIdx);
 
-        gain.gain.setValueAtTime(0.08 * (isMuted ? 0 : volume), ctx.currentTime);
-
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc1.start();
-        osc2.start();
+    // If was playing, continue playing the new track
+    if (isPlaying) {
+      if (targetSound.src === 'synth') {
+        startSynth();
+      } else if (audioRef.current) {
+        audioRef.current.src = targetSound.src;
+        audioRef.current.load();
+        audioRef.current.play().catch(() => {
+          setAudioError(true);
+          setIsPlaying(false);
+        });
       }
-    } catch {
-      // Ignore fallback errors
     }
   };
 
+  // Play / Pause Toggle
   const togglePlay = async () => {
-    if (!audioRef.current) return;
+    setAudioError(false);
 
     if (isPlaying) {
-      audioRef.current.pause();
+      // Pause playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      stopSynth();
       setIsPlaying(false);
-      if (synthContextRef.current && synthContextRef.current.state === 'running') {
-        synthContextRef.current.suspend();
-      }
     } else {
-      try {
-        await audioRef.current.play();
+      // Start playback
+      if (!currentSound) return;
+
+      if (currentSound.src === 'synth') {
+        startSynth();
         setIsPlaying(true);
-      } catch {
-        // Autoplay/load issue: fallback gracefully
-        setIsPlaying(true);
-        startSynthFallback();
+      } else if (audioRef.current) {
+        try {
+          audioRef.current.src = currentSound.src;
+          audioRef.current.volume = isMuted ? 0 : volume;
+          await audioRef.current.play();
+          setIsPlaying(true);
+        } catch (err) {
+          console.warn('Audio playback failed:', err.message);
+          setAudioError(true);
+          setIsPlaying(false);
+        }
       }
     }
   };
 
-  const handleSeek = (e) => {
-    const newTime = parseFloat(e.target.value);
-    setCurrentTime(newTime);
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
-    }
-  };
-
-  const handleNextTrack = () => {
-    setCurrentTrackIdx((prev) => (prev + 1) % TRACKS.length);
-  };
-
-  const formatTime = (secs) => {
-    if (isNaN(secs) || secs === 0) return '0:00';
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
+  // No sounds configured edge case
+  if (sounds.length === 0) {
+    return (
+      <div className="lock-in-music-player">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-sm)' }}>
+          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>No focus sounds yet</span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => navigate('/settings')}
+            style={{ fontSize: '11px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            <Plus size={12} /> Add Sound
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="lock-in-music-player">
+      {/* Header with track name display & indicator */}
       <div className="music-player-header">
-        <div className="music-title-group">
-          <Music size={14} className={`music-icon ${isPlaying ? 'spinning' : ''}`} style={{ color: 'var(--accent-primary)' }} />
-          <span className="music-label">Focus Sound</span>
+        <div className="music-title-group" style={{ flex: 1, minWidth: 0 }}>
+          <Music size={14} className={`music-icon ${isPlaying ? 'spinning' : ''}`} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+          <span className="music-label" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {currentSound?.name || 'Focus Sound'}
+          </span>
+          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+            ({trackIndex + 1}/{sounds.length})
+          </span>
         </div>
-
-        {/* Track selector dropdown */}
-        <select
-          className="music-track-select"
-          value={currentTrackIdx}
-          onChange={(e) => setCurrentTrackIdx(Number(e.target.value))}
-        >
-          {TRACKS.map((t, idx) => (
-            <option key={t.id} value={idx}>
-              {t.name}
-            </option>
-          ))}
-        </select>
       </div>
 
-      {/* Scrubber / Progress bar & Controls */}
-      <div className="music-player-body">
+      {/* Error Banner */}
+      {audioError && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--color-danger)', background: 'rgba(248, 113, 113, 0.1)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', marginBottom: '8px' }}>
+          <AlertCircle size={12} /> Unable to play this sound. Try another track or edit source in Settings.
+        </div>
+      )}
+
+      {/* Main Controls Row: Previous, Play/Pause, Next */}
+      <div className="music-player-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-md)' }}>
         <button
           type="button"
-          className="btn btn-ghost btn-icon music-play-btn"
-          onClick={togglePlay}
-          title={isPlaying ? 'Pause Music' : 'Play Music'}
+          className="btn btn-ghost btn-icon music-prev-btn"
+          onClick={() => changeTrack(trackIndex - 1)}
+          title="Previous Track"
+          style={{ color: 'var(--text-secondary)' }}
         >
-          {isPlaying ? <Pause size={16} strokeWidth={2} /> : <Play size={16} strokeWidth={2} />}
+          <SkipBack size={16} strokeWidth={1.75} />
         </button>
 
-        <div className="music-progress-wrapper">
-          <input
-            type="range"
-            className="music-slider progress-slider"
-            min={0}
-            max={duration || 100}
-            step={0.1}
-            value={currentTime}
-            onChange={handleSeek}
-          />
-          <div className="music-time-display">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
+        <button
+          type="button"
+          className="btn btn-primary btn-icon music-play-btn"
+          onClick={togglePlay}
+          title={isPlaying ? 'Pause Sound' : 'Play Sound'}
+          style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {isPlaying ? <Pause size={18} strokeWidth={2.2} /> : <Play size={18} strokeWidth={2.2} style={{ marginLeft: '2px' }} />}
+        </button>
 
         <button
           type="button"
           className="btn btn-ghost btn-icon music-next-btn"
-          onClick={handleNextTrack}
+          onClick={() => changeTrack(trackIndex + 1)}
           title="Next Track"
+          style={{ color: 'var(--text-secondary)' }}
         >
-          <SkipForward size={14} strokeWidth={1.75} />
+          <SkipForward size={16} strokeWidth={1.75} />
         </button>
       </div>
 
-      {/* Volume control row */}
-      <div className="music-volume-row">
+      {/* Volume slider & Mute toggle */}
+      <div className="music-volume-row" style={{ marginTop: 'var(--space-sm)' }}>
         <button
           type="button"
           className="btn btn-ghost btn-icon music-mute-btn"
           onClick={() => setIsMuted(!isMuted)}
           title={isMuted ? 'Unmute' : 'Mute'}
+          style={{ color: 'var(--text-tertiary)', padding: 4 }}
         >
           {isMuted || volume === 0 ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
@@ -223,6 +281,7 @@ export default function LockInMusicPlayer() {
             setVolume(parseFloat(e.target.value));
             if (isMuted) setIsMuted(false);
           }}
+          style={{ flex: 1 }}
         />
       </div>
     </div>

@@ -1,16 +1,12 @@
-/**
- * Goals REST API routes.
- * Goals contain embedded checklist arrays — all mutations happen via PUT.
- */
 import { Router } from 'express';
-import { getDb } from '../db.js';
+import Goal from '../models/Goal.js';
 
 const router = Router();
 
-// GET /api/goals — list all goals
+// GET /api/goals — list user goals
 router.get('/', async (req, res) => {
   try {
-    const goals = await getDb().collection('goals').find().toArray();
+    const goals = await Goal.find({ userId: req.userId }).lean();
     res.json(goals);
   } catch (err) {
     console.error('GET /api/goals error:', err);
@@ -21,11 +17,12 @@ router.get('/', async (req, res) => {
 // POST /api/goals — create a goal
 router.post('/', async (req, res) => {
   try {
-    const goal = req.body;
-    if (!goal.id || !goal.title) {
+    const goalData = req.body;
+    if (!goalData.id || !goalData.title) {
       return res.status(400).json({ error: 'Goal requires id and title' });
     }
-    await getDb().collection('goals').insertOne(goal);
+    const goal = new Goal({ ...goalData, userId: req.userId });
+    await goal.save();
     res.status(201).json(goal);
   } catch (err) {
     console.error('POST /api/goals error:', err);
@@ -33,20 +30,24 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/goals/:id — update a goal (covers edit, toggle, checklist mutations)
+// PUT /api/goals/:id — update a goal
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
     delete updates._id;
-    const result = await getDb().collection('goals').updateOne(
-      { id },
-      { $set: updates }
+    delete updates.userId;
+
+    const goal = await Goal.findOneAndUpdate(
+      { id, userId: req.userId },
+      { $set: updates },
+      { new: true }
     );
-    if (result.matchedCount === 0) {
+
+    if (!goal) {
       return res.status(404).json({ error: 'Goal not found' });
     }
-    res.json({ success: true });
+    res.json({ success: true, goal });
   } catch (err) {
     console.error('PUT /api/goals/:id error:', err);
     res.status(500).json({ error: 'Failed to update goal' });
@@ -57,7 +58,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await getDb().collection('goals').deleteOne({ id });
+    const result = await Goal.deleteOne({ id, userId: req.userId });
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Goal not found' });
     }

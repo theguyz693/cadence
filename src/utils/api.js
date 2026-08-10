@@ -1,21 +1,50 @@
 /**
  * Frontend API client for Cadence backend.
- * All functions return parsed JSON. Errors are thrown as exceptions.
+ * Includes JWT Token handling.
  */
 
 const BASE = '/api';
 
+export function getToken() {
+  return localStorage.getItem('cadence_token');
+}
+
+export function setToken(token) {
+  if (token) {
+    localStorage.setItem('cadence_token', token);
+  } else {
+    localStorage.removeItem('cadence_token');
+  }
+}
+
 async function request(path, options = {}) {
+  const token = getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
+    headers,
   });
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `API error ${res.status}`);
   }
   return res.json();
 }
+
+// ===================== AUTH =====================
+export const signupApi = (credentials) => request('/auth/signup', { method: 'POST', body: JSON.stringify(credentials) });
+export const loginApi = (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) });
+export const logoutApi = () => request('/auth/logout', { method: 'POST' });
+export const fetchMeApi = () => request('/auth/me');
 
 // ===================== TASKS =====================
 export const fetchTasks = () => request('/tasks');
@@ -44,9 +73,13 @@ export const fetchSettings = () => request('/settings');
 export const saveSettings = (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) });
 export const resetSettings = () => request('/settings', { method: 'DELETE' });
 
+// ===================== FOCUS SESSIONS =====================
+export const fetchFocusSessions = () => request('/focus-sessions');
+export const createFocusSession = (session) => request('/focus-sessions', { method: 'POST', body: JSON.stringify(session) });
+
 // ===================== BULK LOAD =====================
 /**
- * Fetch all data in parallel. Returns shape matching AppContext state.
+ * Fetch all user data in parallel. Returns shape matching AppContext state.
  */
 export async function fetchAllData() {
   const [tasks, goals, routines, completions, settings] = await Promise.all([

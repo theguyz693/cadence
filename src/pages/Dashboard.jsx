@@ -100,10 +100,17 @@ export default function Dashboard() {
     day: 'numeric'
   });
 
+  // Entrance animation — add class on mount, remove after animation completes
+  const [entering, setEntering] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setEntering(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="dashboard-viewport">
       {/* ============ TOP HERO ROW ============ */}
-      <div className="dashboard-hero-row">
+      <div className="dashboard-hero-row cadence-stagger" style={{ '--stagger-i': 0 }}>
         <div className="glass-panel bento-greeting glow-border" style={{ justifyContent: 'center', width: '100%' }}>
           
           {/* Top Header Row with Date on Left & Live Time + Account Icon on Right */}
@@ -146,23 +153,13 @@ export default function Dashboard() {
               <span className="greeting-stat-lbl">Tasks Left</span>
             </div>
 
-            {/* Prominent Lock In CTA Button */}
+            {/* Signature Lock In CTA Button */}
             <button
-              className="btn btn-primary"
+              className="lock-in-hero-btn"
               onClick={() => openLockIn()}
-              style={{
-                background: 'var(--accent-gradient)',
-                padding: '8px 20px',
-                borderRadius: 'var(--radius-full)',
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                boxShadow: '0 4px 16px var(--accent-primary-glow)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
             >
-              <Lock size={15} strokeWidth={2} /> LOCK IN
+              <span className="lock-in-icon"><Lock size={15} strokeWidth={2} /></span>
+              <span className="lock-in-hero-btn-text">LOCK IN</span>
             </button>
           </div>
         </div>
@@ -175,7 +172,7 @@ export default function Dashboard() {
         <div className="dashboard-left-col">
           
           {/* 1. TODAY'S ROUTINES */}
-          <div className="glass-panel glow-border bento-todays-routines">
+          <div className="glass-panel glow-border bento-todays-routines cadence-stagger" style={{ '--stagger-i': 1 }}>
             <div className="glass-panel-header">
               <span className="glass-panel-title">Today's Routines</span>
               <span className="glass-panel-subtitle" style={{ color: 'var(--accent-secondary)', fontWeight: 600 }}>
@@ -235,7 +232,7 @@ export default function Dashboard() {
           </div>
 
           {/* 2. ROUTINE / WORKOUT SEQUENCER */}
-          <div className="glass-panel glow-border">
+          <div className="glass-panel glow-border cadence-stagger" style={{ '--stagger-i': 2 }}>
             <div className="glass-panel-header">
               <div>
                 <span className="glass-panel-title">Routine Sequencer</span>
@@ -297,7 +294,7 @@ export default function Dashboard() {
           </div>
 
           {/* 3. UPCOMING ITEMS */}
-          <div className="glass-panel glow-border bento-upcoming">
+          <div className="glass-panel glow-border bento-upcoming cadence-stagger" style={{ '--stagger-i': 3 }}>
             <div className="glass-panel-header">
               <span className="glass-panel-title">Upcoming Items</span>
             </div>
@@ -335,7 +332,7 @@ export default function Dashboard() {
           </div>
 
           {/* 4. TASKS CHECKLIST */}
-          <div className="glass-panel glow-border">
+          <div className="glass-panel glow-border cadence-stagger" style={{ '--stagger-i': 4 }}>
             <div className="glass-panel-header">
               <span className="glass-panel-title">Tasks Checklist</span>
               {pendingTasks.length > 0 && (
@@ -390,14 +387,11 @@ export default function Dashboard() {
 
         </div>
 
-        {/* ================= RIGHT COLUMN (~40%): ALL ACTIVE GOALS + FOCUS TODAY ================= */}
+        {/* ================= RIGHT COLUMN (~40%): ACTIVE GOALS (primary) + FOCUS TODAY ================= */}
         <div className="dashboard-right-col">
-          
-          {/* FOCUS TODAY WIDGET */}
-          <FocusTodayWidget />
 
-          {/* ACTIVE GOALS PANEL */}
-          <div className="glass-panel active-goals-panel glow-border">
+          {/* ACTIVE GOALS PANEL — primary right-side content */}
+          <div className="glass-panel active-goals-panel glow-border cadence-stagger" style={{ '--stagger-i': 2 }}>
             <div className="glass-panel-header">
               <div>
                 <span className="glass-panel-title">Active Goals</span>
@@ -460,7 +454,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Visual progress bar */}
+                      {/* Compact progress bar */}
                       <div className="progress-bar active-goal-progress-bar">
                         <div
                           className={`progress-bar-fill ${percentage === 100 ? 'complete' : ''}`}
@@ -468,7 +462,7 @@ export default function Dashboard() {
                         />
                       </div>
 
-                      {/* Counts + Days remaining row */}
+                      {/* Counts + Days remaining */}
                       <div className="active-goal-meta-row">
                         <span className="active-goal-count-badge">
                           {completed}/{total}
@@ -477,32 +471,16 @@ export default function Dashboard() {
                           <Clock size={11} strokeWidth={1.75} /> {formatTimeRemaining(daysLeft)}
                         </span>
                       </div>
-
-                      {/* Checklist items preview */}
-                      {goal.checklist && goal.checklist.length > 0 && (
-                        <div className="active-goal-checklist-preview" onClick={(e) => e.stopPropagation()}>
-                          {goal.checklist.slice(0, 4).map(item => (
-                            <div 
-                              key={item.id} 
-                              className={`active-goal-item-row ${item.completed ? 'done' : ''}`}
-                              onClick={() => toggleChecklistItem(goal.id, item.id)}
-                            >
-                              <div className={`mini-checkbox ${item.completed ? 'checked' : ''}`} />
-                              <span className="active-goal-item-text">{item.text}</span>
-                            </div>
-                          ))}
-                          {goal.checklist.length > 4 && (
-                            <div className="active-goal-more-count">
-                              +{goal.checklist.length - 4} more items...
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
               </div>
             )}
+          </div>
+
+          {/* FOCUS TODAY WIDGET */}
+          <div className="cadence-stagger" style={{ '--stagger-i': 5 }}>
+            <FocusTodayWidget />
           </div>
         </div>
 

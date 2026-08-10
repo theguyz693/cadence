@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { useLockIn } from '../context/LockInContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { ACCENT_THEMES } from '../utils/helpers.js';
 
 import {
@@ -12,7 +13,9 @@ import {
   Settings as SettingsIcon,
   Lock,
   Menu,
-  X
+  X,
+  LogOut,
+  User
 } from 'lucide-react';
 
 const navItems = [
@@ -34,8 +37,10 @@ const BACKGROUND_GIFS = [
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { state } = useApp();
   const { openLockIn } = useLockIn();
+  const { user, logout } = useAuth();
   const [backgroundUrl, setBackgroundUrl] = useState('');
   
   const accentTheme = state?.settings?.accentColor || 'indigo';
@@ -92,8 +97,21 @@ export default function Layout({ children }) {
 
   const bannerActive = state?.settings?.showBanner !== false;
 
+  // Entrance animation class — applied once on mount
+  const [appEntering, setAppEntering] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setAppEntering(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleLogout = async () => {
+    closeSidebar();
+    await logout();
+    navigate('/login');
+  };
+
   return (
-    <div className="app-layout">
+    <div className={`app-layout${appEntering ? ' cadence-entering' : ''}`}>
       {/* Full screen ambient GIF background */}
       {bannerActive && backgroundUrl && (
         <>
@@ -163,6 +181,58 @@ export default function Layout({ children }) {
             </NavLink>
           ))}
         </nav>
+
+        {/* User profile & Logout at bottom of sidebar */}
+        {user && (
+          <div style={{ marginTop: 'auto', padding: '0 var(--space-md)', paddingBottom: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-sm)',
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}>
+              <div style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'var(--accent-primary-glow)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent-primary)',
+              }}>
+                <User size={14} />
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user.username}
+                </div>
+                <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Authenticated
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="nav-link"
+              style={{
+                width: '100%',
+                justifyContent: 'flex-start',
+                color: 'var(--color-danger)',
+                background: 'transparent',
+              }}
+            >
+              <span className="nav-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                <LogOut size={16} strokeWidth={1.75} />
+              </span>
+              <span>Log Out</span>
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Main content */}
