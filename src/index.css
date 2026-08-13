@@ -3514,3 +3514,59 @@ textarea.form-input {
 }
 
 
+/* ========================================
+   CADENCE — Video Intro Overlay
+   Fullscreen video reveal sequence
+   ======================================== */
+
+/* App content rendered behind the overlay */
+.cadence-intro-app-behind {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  overflow: auto;
+}
+
+.cadence-intro-app-behind > * {
+  pointer-events: none;
+}
+
+/* Fullscreen video overlay */
+.cadence-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  cursor: pointer;
+  user-select: none;
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+.cadence-intro-overlay.cadence-intro-fadeout {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The video element */
+.cadence-intro-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Reduce motion: skip intro entirely (handled in JS, this is a fallback) */
+@media (prefers-reduced-motion: reduce) {
+  .cadence-intro-overlay {
+    display: none !important;
+  }
+}
+
