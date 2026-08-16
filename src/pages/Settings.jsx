@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import Modal from '../components/Modal.jsx';
-import { ACCENT_THEMES } from '../utils/helpers.js';
+import { ACCENT_THEMES, UI_THEMES } from '../utils/helpers.js';
 import { AlertTriangle, Music, Plus, Trash2, Play, Square, CheckCircle2 } from 'lucide-react';
 
 const DEFAULT_FOCUS_SOUNDS = [
@@ -22,6 +22,7 @@ export default function Settings() {
   const bgDim = state.settings?.bgDim ?? 60;
   const activeBackground = state.settings?.activeBackground || 'random';
   const customBackgrounds = state.settings?.customBackgrounds || [];
+  const currentUiTheme = state.settings?.uiTheme || 'default';
 
   // Focus Sounds State
   const focusSounds = state.settings?.focusSounds || DEFAULT_FOCUS_SOUNDS;
@@ -57,6 +58,10 @@ export default function Settings() {
 
   const handleAccentChange = (colorKey) => {
     updateSettings({ accentColor: colorKey });
+  };
+
+  const handleUiThemeChange = (themeKey) => {
+    updateSettings({ uiTheme: themeKey });
   };
 
   const handleToggleBanner = () => {
@@ -248,14 +253,243 @@ export default function Settings() {
         <h3 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Appearance
         </h3>
-        
+
+        {/* UI Theme Selector */}
+        <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 'var(--space-md)' }}>
+          <div className="settings-row-label">
+            <span>UI Theme</span>
+            <span>Transform the entire look and feel of Cadence</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-md)', marginTop: 'var(--space-xs)' }}>
+            {Object.entries(UI_THEMES).map(([key, theme]) => {
+              const isActive = currentUiTheme === key;
+              const isRetro = key === 'retro';
+              const isMonochrome = key === 'monochrome';
+              const isClay = key === 'clay';
+              const isSketch = key === 'sketch';
+              const isCyberpunk = key === 'cyberpunk';
+              
+              let cardBg = 'rgba(255, 255, 255, 0.02)';
+              let cardBorder = '1px solid var(--border-subtle)';
+              let cardRadius = 'var(--radius-md)';
+              let cardShadow = 'none';
+
+              if (isRetro) {
+                cardBg = '#C0C0C0';
+                cardRadius = '0';
+                cardBorder = isActive ? '2px solid #000000' : '2px solid #808080';
+                cardShadow = isActive
+                  ? 'inset -1px -1px 0 #404040, inset 1px 1px 0 #dfdfdf'
+                  : 'inset -1px -1px 0 #808080, inset 1px 1px 0 #fff';
+              } else if (isMonochrome) {
+                cardBg = '#FFFFFF';
+                cardRadius = '0';
+                cardBorder = isActive ? '2px solid #000000' : '1px solid #E5E5E5';
+              } else if (isClay) {
+                cardBg = '#F4F1FA';
+                cardRadius = '24px';
+                cardBorder = isActive ? '2px solid #7C3AED' : '2px solid transparent';
+                cardShadow = isActive
+                  ? '8px 8px 16px rgba(160, 150, 180, 0.25), -4px -4px 10px rgba(255, 255, 255, 0.9), inset 4px 4px 8px rgba(139, 92, 246, 0.05)'
+                  : '4px 4px 8px rgba(160, 150, 180, 0.15), -2px -2px 6px rgba(255, 255, 255, 0.8)';
+              } else if (isSketch) {
+                cardBg = '#fdfbf7';
+                cardRadius = '15px 255px 15px 225px / 225px 15px 255px 15px';
+                cardBorder = '2px solid #2d2d2d';
+                cardShadow = isActive
+                  ? '2px 2px 0px 0px #2d2d2d'
+                  : '4px 4px 0px 0px #2d2d2d';
+              } else if (isCyberpunk) {
+                cardBg = '#12121a';
+                cardRadius = '0px';
+                cardBorder = isActive ? '1.5px solid #00ff88' : '1px solid #2a2a3a';
+                cardShadow = isActive ? '0 0 12px rgba(0, 255, 136, 0.35)' : 'none';
+              } else if (isActive) {
+                cardBg = 'var(--accent-primary-glow)';
+                cardBorder = '1.5px solid var(--accent-primary)';
+              }
+
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleUiThemeChange(key)}
+                  className="ui-theme-card"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: 'var(--space-lg)',
+                    borderRadius: cardRadius,
+                    background: cardBg,
+                    border: cardBorder,
+                    boxShadow: cardShadow,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    position: 'relative',
+                    transition: 'all 120ms ease',
+                    ...(isCyberpunk ? {
+                      clipPath: 'polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)',
+                    } : {}),
+                  }}
+                >
+                  {/* Theme Preview Swatch */}
+                  <div style={{
+                    height: '48px',
+                    borderRadius: isRetro || isMonochrome || isCyberpunk ? '0' : isClay ? '16px' : isSketch ? '12px 4px 10px 4px / 4px 10px 4px 12px' : 'var(--radius-sm)',
+                    overflow: 'hidden',
+                    border: isRetro ? '2px solid #808080' : isMonochrome ? '1px solid #000000' : isClay ? 'none' : isSketch ? '2px solid #2d2d2d' : isCyberpunk ? '1px solid #2a2a3a' : '1px solid var(--border-subtle)',
+                    ...(isRetro ? {
+                      background: '#C0C0C0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    } : isMonochrome ? {
+                      background: '#FFFFFF',
+                      border: '1px solid #000000',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      padding: '0 12px',
+                    } : isClay ? {
+                      background: '#F4F1FA',
+                      boxShadow: 'inset 3px 3px 6px #d9d4e3, inset -3px -3px 6px #ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 12px',
+                    } : isSketch ? {
+                      background: '#fdfbf7',
+                      backgroundImage: 'radial-gradient(#e5e0d8 1.5px, transparent 1.5px)',
+                      backgroundSize: '10px 10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      padding: '0 12px',
+                    } : isCyberpunk ? {
+                      background: '#0a0a0f',
+                      backgroundImage: 'linear-gradient(rgba(0, 255, 136, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 136, 0.04) 1px, transparent 1px)',
+                      backgroundSize: '8px 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 12px',
+                    } : {
+                      background: 'linear-gradient(135deg, #08080d, #0e0e16)',
+                    }),
+                  }}>
+                    {isRetro ? (
+                      <>
+                        <div style={{ height: '16px', background: 'linear-gradient(to right, #000080, #1084D0)', display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+                          <span style={{ color: '#fff', fontSize: '8px', fontWeight: 700, fontFamily: '"MS Sans Serif", Tahoma, sans-serif' }}>Cadence.exe</span>
+                        </div>
+                        <div style={{ flex: 1, background: '#C0C0C0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '2px' }}>
+                          <div style={{ width: '24px', height: '12px', background: '#C0C0C0', border: '2px solid', borderColor: '#fff #808080 #808080 #fff', fontSize: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}>OK</div>
+                          <div style={{ width: '10px', height: '10px', background: '#FFFF00' }} />
+                          <div style={{ width: '10px', height: '10px', background: '#FF0000' }} />
+                          <div style={{ width: '10px', height: '10px', background: '#0000FF' }} />
+                        </div>
+                      </>
+                    ) : isMonochrome ? (
+                      <>
+                        <span style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '18px', fontWeight: 600, color: '#000000', lineHeight: 1 }}>Aa</span>
+                        <div style={{ height: '1px', background: '#000000', width: '100%', marginTop: '3px' }} />
+                      </>
+                    ) : isClay ? (
+                      <div style={{
+                        width: '60px',
+                        height: '24px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #A78BFA, #7C3AED)',
+                        boxShadow: '3px 3px 6px rgba(139, 92, 246, 0.3), -2px -2px 4px rgba(255, 255, 255, 0.4), inset 2px 2px 4px rgba(255, 255, 255, 0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '9px', fontWeight: 900, color: '#FFFFFF', letterSpacing: '0.05em' }}>CLAY</span>
+                      </div>
+                    ) : isSketch ? (
+                      <div style={{
+                        width: '65px',
+                        height: '24px',
+                        borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px',
+                        border: '2px solid #2d2d2d',
+                        background: '#FFFFFF',
+                        boxShadow: '2px 2px 0px #2d2d2d',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: 'rotate(-2deg) scale(0.9)',
+                      }}>
+                        <span style={{ fontFamily: 'Kalam, sans-serif', fontSize: '11px', fontWeight: 700, color: '#2d2d2d', lineHeight: 1 }}>Aa!</span>
+                      </div>
+                    ) : isCyberpunk ? (
+                      <div style={{
+                        width: '65px',
+                        height: '24px',
+                        border: '1px solid #ff00ff',
+                        background: 'rgba(255, 0, 255, 0.15)',
+                        boxShadow: '0 0 8px #ff00ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        clipPath: 'polygon(0 6px, 6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)',
+                      }}>
+                        <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '8px', fontWeight: 900, color: '#ff00ff', letterSpacing: '0.1em' }}>HUD_V1</span>
+                      </div>
+                    ) : (
+                      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '0 12px' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div style={{ height: '4px', width: '60%', borderRadius: '2px', background: 'rgba(255,255,255,0.12)' }} />
+                          <div style={{ height: '3px', width: '40%', borderRadius: '2px', background: 'rgba(255,255,255,0.06)' }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Theme Name & Description */}
+                  <div>
+                    <div style={{
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 700,
+                      color: isRetro || isMonochrome ? '#000000' : isClay ? '#332F3A' : isSketch ? '#2d2d2d' : isCyberpunk ? '#e0e0e0' : 'var(--text-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}>
+                      {theme.name}
+                      {isActive && (
+                        <span style={{
+                          fontSize: '8px',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          padding: '1px 6px',
+                          borderRadius: isRetro || isMonochrome || isCyberpunk ? '0' : isClay ? '12px' : isSketch ? '4px 10px 4px 8px / 10px 4px 8px 4px' : 'var(--radius-full)',
+                          background: isRetro ? '#000080' : isMonochrome ? '#000000' : isClay ? '#7C3AED' : isSketch ? '#ff4d4d' : isCyberpunk ? '#00ff88' : 'var(--accent-primary)',
+                          color: isCyberpunk ? '#0a0a0f' : '#fff',
+                        }}>Active</span>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: 'var(--font-size-xs)',
+                      color: isRetro ? '#808080' : isMonochrome ? '#525252' : isClay ? '#635F69' : isSketch ? '#5c5850' : isCyberpunk ? '#6b7280' : 'var(--text-tertiary)',
+                      marginTop: '2px',
+                    }}>
+                      {theme.description}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Accent Color Theme */}
         <div className="settings-row">
           <div className="settings-row-label">
             <span>Color Palette Theme</span>
-            <span>Choose a curated primary gradient theme</span>
+            <span>{currentUiTheme !== 'default' ? `Overridden by ${UI_THEMES[currentUiTheme]?.name} theme — switch to Default to use` : 'Choose a curated primary gradient theme'}</span>
           </div>
-          <div className="accent-color-picker">
+          <div className="accent-color-picker" style={currentUiTheme !== 'default' ? { opacity: 0.4, pointerEvents: 'none' } : {}}>
             {Object.entries(ACCENT_THEMES).map(([key, value]) => (
               <button
                 key={key}

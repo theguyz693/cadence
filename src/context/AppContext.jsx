@@ -202,7 +202,7 @@ function appReducer(state, action) {
         goals: [],
         routines: [],
         completions: {},
-        settings: { theme: 'dark' },
+        settings: { theme: 'dark', uiTheme: 'default' },
       };
 
     default:
@@ -328,6 +328,7 @@ const emptyState = {
   completions: {},
   settings: {
     theme: 'dark',
+    uiTheme: 'default',
     accentColor: 'indigo',
     showBanner: true,
     bgBlur: 25,

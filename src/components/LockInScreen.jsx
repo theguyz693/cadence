@@ -102,7 +102,7 @@ export default function LockInScreen() {
       <div className="lock-in-header-bar">
         <div className="lock-in-brand">
           <span className="lock-in-logo-icon" style={{ display: 'flex', alignItems: 'center', color: 'var(--accent-primary)' }}>
-            <Lock size={18} strokeWidth={2} />
+            <Logo size={18} />
           </span>
           <span className="lock-in-brand-text">CADENCE LOCK IN</span>
         </div>

@@ -17,6 +17,7 @@ import {
   LogOut,
   User
 } from 'lucide-react';
+import Logo from './Logo.jsx';
 
 const navItems = [
   { to: '/', Icon: LayoutDashboard, label: 'Dashboard' },
@@ -58,6 +59,18 @@ export default function Layout({ children }) {
     root.style.setProperty('--accent-secondary', themeData.secondary);
     root.style.setProperty('--accent-gradient', themeData.gradient);
   }, [accentTheme]);
+
+  // Apply UI theme (retro, default, etc.) via data attribute on <html>
+  const uiTheme = state?.settings?.uiTheme || 'default';
+  useEffect(() => {
+    const root = document.documentElement;
+    if (uiTheme && uiTheme !== 'default') {
+      root.dataset.uiTheme = uiTheme;
+    } else {
+      delete root.dataset.uiTheme;
+    }
+    return () => { delete root.dataset.uiTheme; };
+  }, [uiTheme]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -137,9 +150,12 @@ export default function Layout({ children }) {
 
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-brand">
-          <h1>Cadence</h1>
-          <div className="brand-tagline">Your rhythm, your rules</div>
+        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Logo size={32} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+          <div>
+            <h1>Cadence</h1>
+            <div className="brand-tagline">Your rhythm, your rules</div>
+          </div>
         </div>
 
         <nav className="sidebar-nav">

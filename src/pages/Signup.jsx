@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Lock, UserPlus, Sparkles } from 'lucide-react';
+import { UserPlus, Sparkles } from 'lucide-react';
+import Logo from '../components/Logo.jsx';
 
 export default function Signup() {
   const [username, setUsername] = useState('');
@@ -24,8 +25,8 @@ export default function Signup() {
       return;
     }
 
-    if (password.length < 4) {
-      setError('Password must be at least 4 characters.');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
       return;
     }
 
@@ -51,7 +52,7 @@ export default function Signup() {
       <div className="glass-panel auth-card glow-border">
         <div className="auth-header">
           <div className="auth-logo">
-            <Lock size={24} style={{ color: 'var(--accent-primary)' }} />
+            <Logo size={24} style={{ color: 'var(--accent-primary)' }} />
           </div>
           <h1>Create Account</h1>
           <p>Start building your momentum with Cadence</p>

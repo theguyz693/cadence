@@ -101,3 +101,12 @@ export const ACCENT_THEMES = {
   }
 };
 
+export const UI_THEMES = {
+  default: { name: 'Default (Dark Glass)', key: 'default', description: 'Premium dark mode with glassmorphism' },
+  retro:   { name: 'Retro 90s', key: 'retro', description: 'Windows 95 vibes — bevels, system fonts, pure nostalgia' },
+  monochrome: { name: 'Monochrome', key: 'monochrome', description: 'Minimalist editorial design — pure black, white, and timeless serif typography' },
+  clay: { name: 'Clay', key: 'clay', description: 'High-fidelity claymorphism — soft 3D shapes, playful rounded lines, and bouncy motion' },
+  sketch: { name: 'Sketch', key: 'sketch', description: 'Hand-drawn notebook — scribbles, wobbly borders, hard pencil shadows, and handwriting' },
+  cyberpunk: { name: 'Cyberpunk', key: 'cyberpunk', description: 'Low-life high-tech — absolute black, glowing neon borders, chamfered corner cuts, and scanlines' },
+};
+
