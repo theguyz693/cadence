@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { useLockIn } from '../context/LockInContext.jsx';
 import { RoutineMiniGrid } from '../components/RoutineGrid.jsx';
-import FocusTodayWidget from '../components/FocusTodayWidget.jsx';
 import {
   Lock,
   Check,
@@ -11,16 +10,13 @@ import {
   Clock,
   Target,
   User,
-  ChevronRight,
   Sparkles,
-  Calendar
 } from 'lucide-react';
 import {
   getRoutineDayInfo,
   getCyclePosition,
   isRoutineCompletedOn,
   toggleRoutineCompletion,
-  getNextActiveDay,
 } from '../utils/recurrence.js';
 import {
   getDaysRemaining,
@@ -52,16 +48,6 @@ export default function Dashboard() {
       return { routine, dayInfo, cyclePos, isCompleted };
     })
     .filter(r => r.dayInfo.active);
-
-  // Routines that are rest today — show the next occurrence
-  const restRoutines = state.routines
-    .map(routine => {
-      const dayInfo = getRoutineDayInfo(routine, today);
-      if (dayInfo.active) return null;
-      const next = getNextActiveDay(routine, today);
-      return next ? { routine, next } : null;
-    })
-    .filter(Boolean);
 
   // Active goals
   const activeGoals = state.goals.filter(g => !g.completed);
@@ -165,233 +151,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ============ MAIN TWO-COLUMN LAYOUT (LEFT ~60% / RIGHT ~40%) ============ */}
+      {/* ============ MAIN TWO-COLUMN LAYOUT: LEFT = ACTIVE GOALS (tall) / RIGHT = ROUTINES + TASKS ============ */}
       <div className="dashboard-main-split">
         
-        {/* ================= LEFT COLUMN (~60%) ================= */}
+        {/* ================= LEFT COLUMN: ACTIVE GOALS (tall primary card) ================= */}
         <div className="dashboard-left-col">
-          
-          {/* 1. TODAY'S ROUTINES */}
-          <div className="glass-panel glow-border bento-todays-routines cadence-stagger" style={{ '--stagger-i': 1 }}>
-            <div className="glass-panel-header">
-              <span className="glass-panel-title">Today's Routines</span>
-              <span className="glass-panel-subtitle" style={{ color: 'var(--accent-secondary)', fontWeight: 600 }}>
-                {routinesDoneCount}/{routinesTotalCount} Complete
-              </span>
-            </div>
 
-            {todaysRoutines.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                <Sparkles size={28} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }} />
-                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-                  No active routines scheduled for today. Enjoy the peace!
-                </p>
-              </div>
-            ) : (
-              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
-                {todaysRoutines.map(({ routine, dayInfo, cyclePos, isCompleted }) => (
-                  <div
-                    key={routine.id}
-                    className={`dashboard-card ${flashId === routine.id ? 'completion-flash' : ''}`}
-                    style={{ background: 'rgba(22, 22, 34, 0.96)', border: '1px solid rgba(255,255,255,0.04)' }}
-                  >
-                    <div className="dashboard-card-icon" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      {routine.emoji || '📋'}
-                    </div>
-                    <div className="dashboard-card-content">
-                      <div className="dashboard-card-title">{routine.name}</div>
-                      <div className="dashboard-card-subtitle" style={{ marginBottom: 'var(--space-xs)' }}>
-                        {dayInfo.label ? (
-                          <span className="today-action-label">{dayInfo.label}</span>
-                        ) : (
-                          `Day ${cyclePos + 1} of ${routine.cycleLength}`
-                        )}
-                      </div>
-                      <RoutineMiniGrid pattern={routine.pattern} currentIndex={cyclePos} />
-                    </div>
-                    <div className="dashboard-card-action" style={{ display: 'flex', gap: 'var(--space-xs)' }}>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => openLockIn(routine.name)}
-                        title="Lock In on this routine"
-                        style={{ color: 'var(--text-secondary)' }}
-                      >
-                        <Lock size={12} strokeWidth={1.75} /> Focus
-                      </button>
-                      <button
-                        className={`btn ${isCompleted ? 'btn-secondary' : 'btn-primary'} btn-sm`}
-                        onClick={() => handleToggleRoutineCompletion(routine.id)}
-                      >
-                        {isCompleted ? <Check size={12} strokeWidth={2} /> : 'Complete'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 2. ROUTINE / WORKOUT SEQUENCER */}
-          <div className="glass-panel glow-border cadence-stagger" style={{ '--stagger-i': 2 }}>
-            <div className="glass-panel-header">
-              <div>
-                <span className="glass-panel-title">Routine Sequencer</span>
-                <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', marginTop: '2px', letterSpacing: '0.04em', fontFamily: 'var(--font-mono)' }}>
-                  MULTI-TRACK TEMPO VIEW
-                </div>
-              </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/routines')} style={{ fontSize: '10px' }}>
-                Edit Tracks →
-              </button>
-            </div>
-
-            {state.routines.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                <Sparkles size={28} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }} />
-                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-                  Create a routine with a repeating pattern to load the sequencer board.
-                </p>
-              </div>
-            ) : (
-              <div className="sequencer-workstation">
-                {state.routines.map(routine => {
-                  const cyclePos = getCyclePosition(routine, today);
-                  const dayInfo = getRoutineDayInfo(routine, today);
-                  
-                  return (
-                    <div 
-                      key={routine.id} 
-                      className={`sequencer-track-row ${dayInfo.active ? 'highlighted-row' : ''}`}
-                    >
-                      <div className="sequencer-track-header">
-                        <span className="sequencer-track-emoji">{routine.emoji}</span>
-                        <div className="sequencer-track-title-group">
-                          <span className="sequencer-track-title" title={routine.name}>{routine.name}</span>
-                          <span className="sequencer-track-subtitle">Cycle: {routine.cycleLength}d</span>
-                        </div>
-                      </div>
-                      <div className="sequencer-track-line">
-                        <div className="sequencer-timeline-track-bar" />
-                        {routine.pattern.map((day, idx) => {
-                          const isCurrent = idx === cyclePos;
-                          const isActive = day.active;
-                          return (
-                            <div
-                              key={idx}
-                              className={`sequencer-track-node ${isActive ? 'active-node' : ''} ${isCurrent ? 'current-node' : ''}`}
-                              title={`D${idx + 1}: ${isActive ? (day.label || 'Active') : 'Rest'}${isCurrent ? ' (Today)' : ''}`}
-                            >
-                              {idx + 1}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* 3. UPCOMING ITEMS */}
-          <div className="glass-panel glow-border bento-upcoming cadence-stagger" style={{ '--stagger-i': 3 }}>
-            <div className="glass-panel-header">
-              <span className="glass-panel-title">Upcoming Items</span>
-            </div>
-
-            {restRoutines.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-                  No rest-state routines configured.
-                </p>
-              </div>
-            ) : (
-              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
-                {restRoutines.map(({ routine, next }) => (
-                  <div 
-                    key={routine.id} 
-                    className="dashboard-card" 
-                    style={{ opacity: 0.7, background: 'rgba(22, 22, 34, 0.96)', border: '1px solid rgba(255,255,255,0.03)' }}
-                  >
-                    <div className="dashboard-card-icon" style={{ opacity: 0.6, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      {routine.emoji || '📋'}
-                    </div>
-                    <div className="dashboard-card-content">
-                      <div className="dashboard-card-title">{routine.name}</div>
-                      <div className="dashboard-card-subtitle">
-                        {next.daysUntil === 1 ? 'Tomorrow' : `In ${next.daysUntil} days`}
-                        {next.dayInfo.label && (
-                          <> · <span className="today-action-label" style={{ fontSize: '9px', padding: '2px 6px' }}>{next.dayInfo.label}</span></>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 4. TASKS CHECKLIST */}
-          <div className="glass-panel glow-border cadence-stagger" style={{ '--stagger-i': 4 }}>
-            <div className="glass-panel-header">
-              <span className="glass-panel-title">Tasks Checklist</span>
-              {pendingTasks.length > 0 && (
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('/tasks')} style={{ fontSize: '10px' }}>
-                  View all →
-                </button>
-              )}
-            </div>
-
-            {pendingTasks.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                <Check size={28} strokeWidth={1.5} style={{ color: 'var(--color-success)', marginBottom: 'var(--space-sm)' }} />
-                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-                  All clear! No pending tasks remaining.
-                </p>
-              </div>
-            ) : (
-              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
-                {pendingTasks.map(task => (
-                  <div
-                    key={task.id}
-                    className={`task-row ${flashId === task.id ? 'completion-flash' : ''}`}
-                    style={{ background: 'rgba(22, 22, 34, 0.96)', border: '1px solid rgba(255,255,255,0.04)' }}
-                  >
-                    <div
-                      className={`checklist-checkbox ${task.completed ? 'checked' : ''}`}
-                      onClick={() => handleToggleTask(task.id)}
-                    />
-                    <div className="task-row-content">
-                      <div className={`task-row-title ${task.completed ? 'completed' : ''}`}>
-                        {task.title}
-                      </div>
-                      {task.dueWithinDays && (
-                        <div className="task-row-desc" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={11} strokeWidth={1.75} /> {formatTimeRemaining(getDaysRemaining(task.createdAt, task.dueWithinDays))}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => openLockIn(task.title)}
-                      title="Lock in on this task"
-                      style={{ fontSize: '11px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <Lock size={11} strokeWidth={1.75} /> Lock In
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>
-
-        {/* ================= RIGHT COLUMN (~40%): ACTIVE GOALS (primary) + FOCUS TODAY ================= */}
-        <div className="dashboard-right-col">
-
-          {/* ACTIVE GOALS PANEL — primary right-side content */}
-          <div className="glass-panel active-goals-panel glow-border cadence-stagger" style={{ '--stagger-i': 2 }}>
+          <div className="glass-panel active-goals-panel glow-border cadence-stagger" style={{ '--stagger-i': 1 }}>
             <div className="glass-panel-header">
               <div>
                 <span className="glass-panel-title">Active Goals</span>
@@ -478,13 +244,127 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* FOCUS TODAY WIDGET */}
-          <div className="cadence-stagger" style={{ '--stagger-i': 5 }}>
-            <FocusTodayWidget />
+        </div>
+
+        {/* ================= RIGHT COLUMN: TODAY'S ROUTINES + TASK CHECKLIST ================= */}
+        <div className="dashboard-right-col">
+
+          {/* 1. TODAY'S ROUTINES */}
+          <div className="glass-panel glow-border bento-todays-routines cadence-stagger" style={{ '--stagger-i': 2 }}>
+            <div className="glass-panel-header">
+              <span className="glass-panel-title">Today's Routines</span>
+              <span className="glass-panel-subtitle" style={{ color: 'var(--accent-secondary)', fontWeight: 600 }}>
+                {routinesDoneCount}/{routinesTotalCount} Complete
+              </span>
+            </div>
+
+            {todaysRoutines.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <Sparkles size={28} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }} />
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                  No active routines scheduled for today. Enjoy the peace!
+                </p>
+              </div>
+            ) : (
+              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
+                {todaysRoutines.map(({ routine, dayInfo, cyclePos, isCompleted }) => (
+                  <div
+                    key={routine.id}
+                    className={`dashboard-card ${flashId === routine.id ? 'completion-flash' : ''}`}
+                  >
+                    <div className="dashboard-card-icon">
+                      {routine.emoji || '📋'}
+                    </div>
+                    <div className="dashboard-card-content">
+                      <div className="dashboard-card-title">{routine.name}</div>
+                      <div className="dashboard-card-subtitle" style={{ marginBottom: 'var(--space-xs)' }}>
+                        {dayInfo.label ? (
+                          <span className="today-action-label">{dayInfo.label}</span>
+                        ) : (
+                          `Day ${cyclePos + 1} of ${routine.cycleLength}`
+                        )}
+                      </div>
+                      <RoutineMiniGrid pattern={routine.pattern} currentIndex={cyclePos} />
+                    </div>
+                    <div className="dashboard-card-action" style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => openLockIn(routine.name)}
+                        title="Lock In on this routine"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        <Lock size={12} strokeWidth={1.75} /> Focus
+                      </button>
+                      <button
+                        className={`btn ${isCompleted ? 'btn-secondary' : 'btn-primary'} btn-sm`}
+                        onClick={() => handleToggleRoutineCompletion(routine.id)}
+                      >
+                        {isCompleted ? <Check size={12} strokeWidth={2} /> : 'Complete'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* 2. TASKS CHECKLIST */}
+          <div className="glass-panel glow-border bento-tasks-checklist cadence-stagger" style={{ '--stagger-i': 3 }}>
+            <div className="glass-panel-header">
+              <span className="glass-panel-title">Tasks Checklist</span>
+              {pendingTasks.length > 0 && (
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate('/tasks')} style={{ fontSize: '10px' }}>
+                  View all →
+                </button>
+              )}
+            </div>
+
+            {pendingTasks.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <Check size={28} strokeWidth={1.5} style={{ color: 'var(--color-success)', marginBottom: 'var(--space-sm)' }} />
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                  All clear! No pending tasks remaining.
+                </p>
+              </div>
+            ) : (
+              <div className="card-list" style={{ marginTop: 'var(--space-xs)' }}>
+                {pendingTasks.map(task => (
+                  <div
+                    key={task.id}
+                    className={`task-row ${flashId === task.id ? 'completion-flash' : ''}`}
+                  >
+                    <div
+                      className={`checklist-checkbox ${task.completed ? 'checked' : ''}`}
+                      onClick={() => handleToggleTask(task.id)}
+                    />
+                    <div className="task-row-content">
+                      <div className={`task-row-title ${task.completed ? 'completed' : ''}`}>
+                        {task.title}
+                      </div>
+                      {task.dueWithinDays && (
+                        <div className="task-row-desc" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={11} strokeWidth={1.75} /> {formatTimeRemaining(getDaysRemaining(task.createdAt, task.dueWithinDays))}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => openLockIn(task.title)}
+                      title="Lock in on this task"
+                      style={{ fontSize: '11px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Lock size={11} strokeWidth={1.75} /> Lock In
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
         </div>
 
       </div>
     </div>
   );
 }
+
