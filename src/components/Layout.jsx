@@ -120,7 +120,7 @@ export default function Layout({ children }) {
   const handleLogout = async () => {
     closeSidebar();
     await logout();
-    navigate('/login');
+    navigate('/');
   };
 
   return (

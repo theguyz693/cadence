@@ -12,6 +12,46 @@ import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import LockInModal from './components/LockInModal.jsx';
 import LockInScreen from './components/LockInScreen.jsx';
+import LandingPage from './pages/LandingPage.jsx';
+
+function LandingOrDashboard() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-secondary)',
+        fontFamily: 'var(--font-family)',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: 8 }}>
+            Cadence
+          </div>
+          <div style={{ fontSize: '0.85rem' }}>Authenticating rhythm...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return (
+      <>
+        <Layout>
+          <Dashboard />
+        </Layout>
+        <LockInModal />
+        <LockInScreen />
+      </>
+    );
+  }
+
+  return <LandingPage />;
+}
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -64,6 +104,12 @@ export default function App() {
         <AppProvider>
           <LockInProvider>
             <Routes>
+              {/* Landing Page or Dashboard */}
+              <Route
+                path="/"
+                element={<LandingOrDashboard />}
+              />
+
               {/* Public Auth Routes */}
               <Route
                 path="/login"
@@ -89,12 +135,12 @@ export default function App() {
                   <ProtectedRoute>
                     <Layout>
                       <Routes>
-                        <Route path="/" element={<Dashboard />} />
                         <Route path="/tasks" element={<Tasks />} />
                         <Route path="/goals" element={<Goals />} />
                         <Route path="/goals/:goalId" element={<Goals />} />
                         <Route path="/routines" element={<Routines />} />
                         <Route path="/settings" element={<Settings />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </Layout>
                     {/* Lock In Setup Modal & Focus Mode Overlay */}

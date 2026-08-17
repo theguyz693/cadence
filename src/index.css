@@ -8907,3 +8907,482 @@ textarea.form-input {
   color: #00ff88;
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
 }
+
+/* ===========================================================
+   PUBLIC LANDING PAGE STYLES — CINEMATIC REDESIGN
+   =========================================================== */
+.cinematic-landing {
+  min-height: 100vh;
+  background-color: #000000;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  font-family: var(--font-family, sans-serif);
+}
+
+.landing-noise-overlay {
+  position: fixed;
+  inset: 0;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Minimal Navigation */
+.cinematic-nav {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 1200px;
+  width: 100%;
+  padding: 30px var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: #ffffff;
+}
+
+.nav-login-link {
+  background: none;
+  border: none;
+  color: #ffffff;
+  opacity: 0.7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  padding: 8px 16px;
+}
+
+.nav-login-link:hover {
+  opacity: 1;
+}
+
+/* 1. Cinematic Opening Hero (Video First) */
+.cinematic-opening-hero {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 100px 24px 40px 24px;
+  background: #000000;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.cinema-video-wrapper {
+  width: 100%;
+  max-width: 1300px;
+  aspect-ratio: 16 / 9;
+  background-color: #000000;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin: auto 0;
+}
+
+.cinema-hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000000;
+  display: block;
+  opacity: 1;
+}
+
+/* Scroll Explorer Hint */
+.hero-scroll-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #52525b;
+  margin-top: auto;
+}
+
+.scroll-arrow {
+  font-size: 14px;
+  animation: bounceIndicator 2s infinite;
+}
+
+@keyframes bounceIndicator {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+/* 2. Cadence Hero Introduction (Below the video) */
+.cadence-hero-intro {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 60px 0 160px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-title {
+  font-family: var(--font-heading);
+  font-size: clamp(3.2rem, 10vw, 7.5rem);
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  margin-left: 0.3em; /* Balance centering */
+  line-height: 1;
+  background: linear-gradient(to bottom, #ffffff 0%, #666666 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fillColor: transparent;
+  background-clip: text;
+  margin-bottom: 20px;
+}
+
+.hero-subtitle {
+  font-family: var(--font-heading);
+  font-size: clamp(0.85rem, 2.5vw, 1.2rem);
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  color: var(--accent-primary);
+  margin-bottom: 30px;
+  text-transform: uppercase;
+}
+
+.hero-description {
+  color: #a0a0ab;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  line-height: 1.7;
+  max-width: 540px;
+  margin-bottom: 40px;
+}
+
+.hero-cta-group {
+  display: flex;
+  justify-content: center;
+}
+
+/* Cinematic Primary Button */
+.btn-cinematic-primary {
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  padding: 16px 36px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-cinematic-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(255, 255, 255, 0.18);
+}
+
+.btn-cinematic-primary.lg {
+  padding: 20px 48px;
+  font-size: 15px;
+}
+
+/* 3. Scroll Sections General & Animation */
+.cinematic-content {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.landing-scroll-section {
+  opacity: 0;
+  transform: translateY(60px);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 260px;
+}
+
+.landing-scroll-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--accent-primary);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.section-headline {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 7vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #ffffff;
+  margin-bottom: 30px;
+}
+
+.section-intro {
+  color: #a0a0ab;
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  line-height: 1.6;
+  max-width: 600px;
+  margin-bottom: 60px;
+}
+
+/* Core Concept Pillars */
+.concept-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-top: 60px;
+}
+
+.pillar-item {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #18181b;
+  padding-top: 24px;
+}
+
+.pillar-index {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: 12px;
+}
+
+.pillar-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.pillar-desc {
+  color: #71717a;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* 3. Lock-In Countdown Schematic */
+.schematic-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 60px;
+}
+
+.schematic-circle-container {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.schematic-circle-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.schematic-track {
+  fill: none;
+  stroke: #18181b;
+  stroke-width: 2;
+}
+
+.schematic-fill {
+  fill: none;
+  stroke: var(--accent-primary);
+  stroke-width: 3;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 240;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px var(--accent-primary-glow));
+}
+
+.schematic-time {
+  font-family: var(--font-mono);
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.schematic-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--accent-primary);
+}
+
+/* 4. Capabilities Section */
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 60px 40px;
+  margin-top: 60px;
+}
+
+.capability-stat {
+  border-bottom: 1px solid #121214;
+  padding-bottom: 24px;
+}
+
+.stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #52525b;
+  margin-bottom: 12px;
+}
+
+.stat-val {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.stat-explanation {
+  color: #71717a;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* 5. Scroll CTA */
+.scroll-section-cta {
+  text-align: center;
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 100px;
+}
+
+.cta-headline {
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 8vw, 5.2rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  color: #ffffff;
+  margin-bottom: 60px;
+}
+
+.cta-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.cta-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #52525b;
+}
+
+.cta-secondary-link {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-size: 13px;
+}
+
+/* Cinematic Footer */
+.cinematic-footer {
+  text-align: center;
+  padding: 50px 24px;
+  border-top: 1px solid #121214;
+  font-size: 11px;
+  color: #3f3f46;
+  z-index: 10;
+  background-color: #000000;
+}
+
+/* Animation Entry Utilities */
+.animate-reveal {
+  animation: revealText 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-reveal-delayed {
+  opacity: 0;
+  animation: revealText 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+.animate-fade-in-long {
+  opacity: 0;
+  animation: fadeInLong 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+}
+
+@keyframes revealText {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLong {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .concept-pillars {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .capabilities-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .landing-scroll-section {
+    margin-bottom: 180px;
+  }
+}
+
