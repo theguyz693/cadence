@@ -121,7 +121,7 @@ export default function Dashboard() {
 
             {/* Time & Account Profile Icon in Top Right */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-              <div className="live-time-display" style={{ fontSize: '2.2rem', lineHeight: 1 }}>
+              <div className="live-time-display" style={{ fontSize: '2.5rem', lineHeight: 1 }}>
                 {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
               </div>
               <div className="profile-avatar-circle" onClick={() => navigate('/settings')} title="Settings Profile">
