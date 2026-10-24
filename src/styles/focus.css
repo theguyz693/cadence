@@ -9,14 +9,15 @@
   z-index: var(--z-focus-mode);
   display: flex;
   flex-direction: column;
-  color: #ecebe8;
-  background: #0d0d0e;
+  color: oklch(94% 0.018 80);
+  background: oklch(11% 0.012 50);
   color-scheme: dark;
   overflow-y: auto;
   animation: fade-in var(--dur-slow) var(--ease-out);
-  --logo-cutout: #0d0d0e;
-  --ring: var(--focus-accent, #7593ff);
+  --logo-cutout: oklch(11% 0.012 50);
+  --ring: oklch(80% 0.16 62);
 }
+[data-accent="cobalt"] .focus-mode { --ring: #7593ff; }
 [data-accent="indigo"] .focus-mode { --ring: #9b92ff; }
 [data-accent="teal"] .focus-mode { --ring: #3fc4b2; }
 [data-accent="emerald"] .focus-mode { --ring: #55c78a; }
@@ -108,13 +109,19 @@
 }
 .focus-timer svg { width: 100%; height: 100%; }
 .focus-ring-track { stroke: rgba(255, 255, 255, 0.07); }
-.focus-ring-fill { stroke: var(--ring); transition: stroke-dashoffset 600ms linear, stroke var(--dur-slow) var(--ease-out); }
+.focus-ring-fill { transition: stroke-dashoffset 600ms linear, stroke var(--dur-slow) var(--ease-out); }
+.focus-ticks line { stroke: oklch(96% 0.012 80 / 0.12); stroke-width: 1.5; stroke-linecap: round; }
+.focus-comet { transform-box: view-box; transform-origin: 160px 160px; transition: transform 600ms linear; }
+.focus-comet-glow { fill: var(--ring); opacity: 0.75; }
+.focus-comet-head { fill: oklch(97% 0.03 85); }
+.is-paused .focus-comet-glow { opacity: 0.2; }
+.focus-status svg { color: var(--ring); }
 .is-paused .focus-ring-fill { stroke: rgba(236, 235, 232, 0.45); }
 .focus-time { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
 .focus-countdown {
-  font-size: clamp(3rem, 14vw, 4.5rem);
-  font-weight: 300;
-  letter-spacing: -0.04em;
+  font-size: clamp(3rem, 14vw, 4.75rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
   line-height: 1;
   color: #fff;
 }
@@ -262,7 +269,7 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-strong);
   background: var(--surface);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .duration-option:hover { background: var(--surface-hover); }
 .duration-option.is-selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }

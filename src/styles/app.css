@@ -489,7 +489,7 @@
 .summary-stats > div:last-child { padding-right: 0; }
 .summary-stats dt { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: 2px; }
 .summary-stats dd { font-size: var(--text-lg); font-weight: var(--weight-semibold); letter-spacing: -0.02em; }
-.summary-stats dd span { color: var(--text-tertiary); font-weight: var(--weight-medium); font-size: var(--text-sm); }
+.summary-stats dd .of { color: var(--text-tertiary); font-weight: var(--weight-medium); font-size: var(--text-sm); }
 @media (max-width: 720px) {
   .summary { flex-direction: column; align-items: stretch; gap: 14px; padding: 14px 16px; }
   .summary-stats > div { flex: 1; padding: 0 12px; }
@@ -506,7 +506,7 @@
 .up-next-label {
   font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
-  text-transform: uppercase;
+
   letter-spacing: var(--tracking-caps);
   color: var(--accent-text);
   margin-bottom: 8px;
@@ -842,7 +842,7 @@ button.sequence-hit:focus-visible .sequence-step { box-shadow: var(--focus-ring)
   border-radius: var(--radius-md);
   border: 1.5px dashed var(--border-strong);
   color: var(--text-tertiary);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .pattern-cell:hover { border-color: var(--accent); color: var(--text); }
 .pattern-cell:active { transform: scale(0.95); }

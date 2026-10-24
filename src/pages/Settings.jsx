@@ -9,6 +9,7 @@ import { PageHeader, Segmented, Field, IconButton, Kbd } from '../components/ui/
 import { ACCENT_THEMES, resolveAccent } from '../utils/helpers.js';
 import { MOD_KEY } from '../components/Layout.jsx';
 import CalendarSettings from '../components/CalendarSettings.jsx';
+import { revealTheme } from '../utils/themeReveal.js';
 
 const DEFAULT_FOCUS_SOUNDS = [
   { id: 'sound_1', name: 'Deep Focus Ambient', src: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', type: 'preset', isDefault: true },
@@ -197,7 +198,7 @@ export default function Settings() {
             <Segmented
               label="Theme"
               value={theme}
-              onChange={(v) => updateSettings({ theme: v })}
+              onChange={(v) => revealTheme(v, () => updateSettings({ theme: v }), document.activeElement)}
               options={[
                 { value: 'light', label: 'Light', icon: SunMedium },
                 { value: 'dark', label: 'Dark', icon: MoonStar },

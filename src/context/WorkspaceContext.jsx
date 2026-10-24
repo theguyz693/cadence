@@ -12,6 +12,7 @@ import QuickAddDialog from '../components/QuickAddDialog.jsx';
 import { generateId } from '../utils/helpers.js';
 import { mondayOnOrBefore } from '../utils/quickParse.js';
 import { daysBetween, startOfDay } from '../utils/dates.js';
+import { revealTheme } from '../utils/themeReveal.js';
 
 const WorkspaceContext = createContext(null);
 
@@ -118,7 +119,7 @@ export function WorkspaceProvider({ children }) {
     closeGoalEditor();
   };
 
-  const setTheme = useCallback((theme) => app.updateSettings({ theme }), [app]);
+  const setTheme = useCallback((theme) => revealTheme(theme, () => app.updateSettings({ theme })), [app]);
 
   // Latest state for toast actions that run after the create has landed.
   const stateRef = useRef(app.state);

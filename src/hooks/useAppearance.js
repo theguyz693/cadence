@@ -33,7 +33,7 @@ export function useAppearance(themePref, accentPref) {
       root.dataset.theme = theme;
       root.dataset.accent = accent;
       document.querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', theme === 'dark' ? '#111112' : '#f6f5f2');
+        ?.setAttribute('content', theme === 'dark' ? '#151110' : '#f2eee8');
     };
     apply();
 

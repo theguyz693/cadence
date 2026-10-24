@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Lock, Plus, Repeat, CheckSquare, Target, ArrowRight, Check, CalendarClock, Timer, Sparkles,
+  Sunrise, Sun, Sunset, Moon,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLockIn } from '../context/LockInContext.jsx';
 import { useWorkspace } from '../context/WorkspaceContext.jsx';
-import { CheckButton, ProgressRing, ProgressBar, EmptyState, Skeleton } from '../components/ui/primitives.jsx';
+import { CheckButton, ProgressRing, ProgressBar, EmptyState, Skeleton, RollingNumber } from '../components/ui/primitives.jsx';
 import TaskRow from '../components/TaskRow.jsx';
 import SmartAdd from '../components/SmartAdd.jsx';
 import RoutineIcon from '../components/RoutineIcon.jsx';
@@ -133,7 +134,10 @@ export default function Dashboard() {
     <div className="page page-today">
       <header className="today-header">
         <div className="grow">
-          <div className="page-eyebrow">{formatLongDate(today)}</div>
+          <div className="page-eyebrow today-date">
+            <SkyIcon hour={today.getHours()} />
+            {formatLongDate(today)}
+          </div>
           <h1 className="t-title">{greetingFor(today)}{firstName ? `, ${firstName}` : ''}</h1>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => openLockIn(nextAction?.kind === 'task' ? nextAction.task.title : nextAction?.routine?.name || '')}>
@@ -153,7 +157,7 @@ export default function Dashboard() {
           <section className="summary" aria-label="Today at a glance">
             <div className="summary-main">
               <ProgressRing value={planDone} max={Math.max(planTotal, 1)} size={48} stroke={4} label="Today's progress">
-                <span className="t-num summary-ring-num">{planTotal ? Math.round((planDone / planTotal) * 100) : 0}<small>%</small></span>
+                <span className="summary-ring-num"><RollingNumber value={planTotal ? Math.round((planDone / planTotal) * 100) : 0} /><small>%</small></span>
               </ProgressRing>
               <div>
                 <div className="summary-headline">
@@ -171,11 +175,11 @@ export default function Dashboard() {
             <dl className="summary-stats">
               <div>
                 <dt>Routines</dt>
-                <dd className="t-num">{routinesDone}<span>/{routinesToday.length}</span></dd>
+                <dd><RollingNumber value={routinesDone} /><span className="of">/{routinesToday.length}</span></dd>
               </div>
               <div>
                 <dt>Tasks done</dt>
-                <dd className="t-num">{tasksDoneToday.length}</dd>
+                <dd><RollingNumber value={tasksDoneToday.length} /></dd>
               </div>
               <div>
                 <dt>Focus</dt>
@@ -186,10 +190,19 @@ export default function Dashboard() {
 
           {/* ---------- Up next ---------- */}
           {nextAction && (
-            <section className="up-next" aria-label="Up next">
+            <section
+              className="up-next"
+              aria-label="Up next"
+              onPointerMove={(e) => {
+                // The card's lamp follows the pointer (decorative; set on this element only).
+                const r = e.currentTarget.getBoundingClientRect();
+                e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
+                e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
+              }}
+            >
               <div className="up-next-label">Up next</div>
               {nextAction.kind === 'routine' ? (
-                <div className="up-next-body">
+                <div className="up-next-body" key={nextAction.kind === 'routine' ? `r${nextAction.routine.id}` : `t${nextAction.task.id}`}>
                   <RoutineIcon routine={nextAction.routine} />
                   <div className="grow">
                     <div className="up-next-title">{nextAction.routine.name}{nextAction.info.label ? ` · ${nextAction.info.label}` : ''}</div>
@@ -205,7 +218,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="up-next-body">
+                <div className="up-next-body" key={nextAction.kind === 'routine' ? `r${nextAction.routine.id}` : `t${nextAction.task.id}`}>
                   <span className="routine-icon" aria-hidden="true"><CheckSquare size={16} strokeWidth={1.75} /></span>
                   <div className="grow">
                     <div className="up-next-title">{nextAction.task.title}</div>
@@ -482,4 +495,10 @@ function TodaySkeleton() {
       </div>
     </div>
   );
+}
+
+/** A small glyph for the time of day, drawn once on arrival. */
+function SkyIcon({ hour }) {
+  const Icon = hour < 5 ? Moon : hour < 9 ? Sunrise : hour < 17 ? Sun : hour < 20 ? Sunset : Moon;
+  return <Icon size={14} strokeWidth={1.9} className="sky-icon" aria-hidden="true" />;
 }

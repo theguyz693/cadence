@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Check, Repeat, CheckSquare, Target, Sun, Lock, Timer, Command, MoonStar,
-  Smartphone, History, ShieldCheck, Coffee, Music, Keyboard, Sparkles,
+  Smartphone, History, ShieldCheck, Coffee, Music, Keyboard,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Logo from '../components/Logo.jsx';
@@ -81,7 +81,16 @@ function SequencerPlayground() {
   const trackPct = preset.days.length > 1 ? (Math.min(revealed, preset.today) / (preset.days.length - 1)) * 100 : 0;
 
   return (
-    <div className="playground" aria-label="Interactive routine sequencer demo">
+    <div
+      className="playground"
+      aria-label="Interactive routine sequencer demo"
+      onPointerMove={(e) => {
+        // A lamp that follows the pointer across the card (decorative, this element only).
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
+      }}
+    >
       <div className="playground-head">
         <span className="routine-icon routine-icon-lg" aria-hidden="true"><Repeat size={18} strokeWidth={1.75} /></span>
         <div className="grow">
@@ -203,7 +212,6 @@ function MiniSeq({ states }) {
 function ProductPreview() {
   return (
     <div className="preview" role="img" aria-label="Preview of the Cadence Today screen: progress summary, the next action, today's routines and tasks.">
-      <div className="preview-chrome" aria-hidden="true"><i /><i /><i /></div>
       <div className="preview-body" aria-hidden="true">
         <aside className="preview-side">
           <div className="brand"><Logo size={16} /><span className="brand-name">Cadence</span></div>
@@ -297,7 +305,7 @@ function LockInFilm() {
    -------------------------------------------------------------------------- */
 const FEATURES = [
   { Icon: History, title: 'Catch up honestly', text: 'Forgot to check in yesterday? Tap the day. Days before a routine existed never count against you.' },
-  { Icon: ShieldCheck, title: 'Streaks that mean something', text: 'Consistency is calculated from real check-ins only — no inflated numbers, no gamified guilt.' },
+  { Icon: ShieldCheck, title: 'Streaks that mean something', text: 'Consistency is calculated from real check-ins only. No inflated numbers, no gamified guilt.' },
   { Icon: Target, title: 'Goals with a next step', text: 'Break a goal into steps. Today shows the next one, so progress happens in small daily moves.' },
   { Icon: Command, title: 'Fast from the keyboard', text: 'Press ⌘K to jump anywhere or create anything. N adds a task, L starts a focus session.' },
   { Icon: MoonStar, title: 'Light, dark, or system', text: 'A calm interface designed for both, with an accent color that’s yours.' },
@@ -338,23 +346,22 @@ export default function LandingPage() {
         {/* ---------------- Hero ---------------- */}
         <section className="hero">
           <div className="hero-copy">
-            <Reveal immediate as="div" className="hero-eyebrow">
-              <Sparkles size={13} strokeWidth={2} aria-hidden="true" /> Routines · Tasks · Goals · Focus
+            {/* Each line rises from behind its own baseline (masked line reveal) */}
+            <h1 className="hero-title lines">
+              <span className="line"><span data-line style={{ '--i': 0 }}>Keep a rhythm,</span></span>
+              <span className="line"><span data-line style={{ '--i': 1 }}>not a to-do list.</span></span>
+            </h1>
+            <Reveal immediate as="p" className="hero-sub" delay={260}>
+              Cadence repeats what matters on cycles you design, from every day to a 20-day training block,
+              and always shows you what to do next.
             </Reveal>
-            <Reveal immediate as="h1" className="hero-title" delay={60}>
-              Keep a rhythm,<br /> not a to-do list.
-            </Reveal>
-            <Reveal immediate as="p" className="hero-sub" delay={120}>
-              Cadence repeats what matters on cycles you design — every day, three times a week, or a 20-day training block —
-              and always shows you the next thing to do.
-            </Reveal>
-            <Reveal immediate className="hero-ctas" delay={180}>
+            <Reveal immediate className="hero-ctas" delay={340}>
               <button type="button" className="btn btn-primary btn-lg" onClick={tryDemo}>
                 Try the live demo <ArrowRight size={16} strokeWidth={2} />
               </button>
               <Link to="/signup" className="btn btn-secondary btn-lg">Create free account</Link>
             </Reveal>
-            <Reveal immediate as="p" className="hero-note t-meta" delay={220}>No signup needed for the demo. It runs entirely in your browser.</Reveal>
+            <Reveal immediate as="p" className="hero-note t-meta" delay={400}>No signup needed for the demo. It runs entirely in your browser.</Reveal>
           </div>
           <Reveal immediate className="hero-visual" delay={120}>
             <SequencerPlayground />
@@ -365,9 +372,9 @@ export default function LandingPage() {
         <section className="landing-section preview-section" aria-labelledby="preview-title">
           <Reveal className="section-head">
             <h2 id="preview-title" className="section-title">One calm view of your day</h2>
-            <p className="section-sub">Today answers one question — what’s next? — and keeps everything else a glance away.</p>
+            <p className="section-sub">Today answers one question, what’s next, and keeps everything else a glance away.</p>
           </Reveal>
-          <Reveal delay={80}><ProductPreview /></Reveal>
+          <Reveal delay={80} className="shutter"><ProductPreview /></Reveal>
         </section>
 
         {/* ---------------- How it works ---------------- */}
@@ -377,7 +384,7 @@ export default function LandingPage() {
           </Reveal>
           <ol className="steps">
             {[
-              { Icon: Repeat, title: 'Design a routine', text: 'Pick a cycle from 1 to 20 days and the days it runs. Label them — Push, Pull, Long run.' },
+              { Icon: Repeat, title: 'Design a routine', text: 'Pick a cycle from 1 to 20 days and the days it runs. Label them: Push, Pull, Long run.' },
               { Icon: Check, title: 'Check in each day', text: 'Today lists what’s due. One tap marks it done; the sequence fills in as you go.' },
               { Icon: Lock, title: 'Lock in to do the work', text: 'Start a timed, distraction-free session on any routine, task or goal.' },
             ].map((s, i) => (
@@ -395,13 +402,12 @@ export default function LandingPage() {
         <section id="lock-in" className="lockin-band" aria-labelledby="lockin-title">
           <div className="lockin-inner">
             <Reveal className="lockin-copy">
-              <div className="lockin-eyebrow">Focus mode</div>
               <h2 id="lockin-title" className="section-title">When it’s time to work, lock in.</h2>
               <p className="section-sub">
                 One task. One timer. Nothing else on screen. Cadence logs every finished session so you can see where your focus actually went.
               </p>
               <ul className="lockin-list">
-                <li><Timer size={15} strokeWidth={1.75} aria-hidden="true" /> 25, 50, 90 minutes — or any length you like</li>
+                <li><Timer size={15} strokeWidth={1.75} aria-hidden="true" /> 25, 50 or 90 minutes, or any length you like</li>
                 <li><Coffee size={15} strokeWidth={1.75} aria-hidden="true" /> Breaks that start when you’re ready</li>
                 <li><Music size={15} strokeWidth={1.75} aria-hidden="true" /> Built-in focus sounds, or bring your own</li>
                 <li><Keyboard size={15} strokeWidth={1.75} aria-hidden="true" /> Space to pause, F for full screen</li>

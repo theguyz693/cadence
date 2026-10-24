@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const settingsSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   theme: { type: String, default: 'system' },
-  accentColor: { type: String, default: 'cobalt' },
+  accentColor: { type: String, default: 'ember' },
   showBanner: { type: Boolean, default: false },
   bannerUrl: { type: String, default: '' },
   bgBlur: { type: Number, default: 25 },

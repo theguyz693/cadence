@@ -12,7 +12,7 @@ const DEFAULT_FOCUS_SOUNDS = [
 
 const DEFAULT_SETTINGS = {
   theme: 'system',
-  accentColor: 'cobalt',
+  accentColor: 'ember',
   showBanner: false,
   bannerUrl: 'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif',
   bgBlur: 25,

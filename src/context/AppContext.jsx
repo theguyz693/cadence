@@ -361,7 +361,7 @@ const emptyState = {
   completions: {},
   settings: {
     theme: 'system',
-    accentColor: 'cobalt',
+    accentColor: 'ember',
     showBanner: false,
     bgBlur: 25,
     bgDim: 60,
