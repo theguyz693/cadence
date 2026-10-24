@@ -14,6 +14,7 @@ import routinesRouter from './routes/routines.js';
 import completionsRouter from './routes/completions.js';
 import settingsRouter from './routes/settings.js';
 import focusSessionsRouter from './routes/focusSessions.js';
+import { calendarRouter, feedRouter } from './routes/calendar.js';
 
 const app = express();
 
@@ -43,6 +44,10 @@ app.get('/health', healthHandler);
 app.use('/api/auth', authRouter);
 app.use('/auth', authRouter);
 
+// Public calendar feed — calendar apps fetch it without logging in (secret token in the URL)
+app.use('/api/calendar/feed', feedRouter);
+app.use('/calendar/feed', feedRouter);
+
 // Protected API Routes (Requires Auth)
 app.use('/api/tasks', authMiddleware, tasksRouter);
 app.use('/tasks', authMiddleware, tasksRouter);
@@ -58,6 +63,9 @@ app.use('/completions', authMiddleware, completionsRouter);
 
 app.use('/api/settings', authMiddleware, settingsRouter);
 app.use('/settings', authMiddleware, settingsRouter);
+
+app.use('/api/calendar', authMiddleware, calendarRouter);
+app.use('/calendar', authMiddleware, calendarRouter);
 
 app.use('/api/focus-sessions', authMiddleware, focusSessionsRouter);
 app.use('/focus-sessions', authMiddleware, focusSessionsRouter);

@@ -1,536 +1,284 @@
-import { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, CalendarDays, Check, MoreHorizontal, Pencil, Plus, RotateCcw, Target, Timer, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { useLockIn } from '../context/LockInContext.jsx';
-import Modal from '../components/Modal.jsx';
-import {
-  Lock,
-  Clock,
-  Edit3,
-  Trash2,
-  Plus,
-  Target,
-  ArrowLeft,
-  Check
-} from 'lucide-react';
-import {
-  getDaysRemaining,
-  getCompletionPercentage,
-  formatTimeRemaining,
-} from '../utils/helpers.js';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
+import { PageHeader, Segmented, EmptyState, ProgressBar, CheckButton, IconButton } from '../components/ui/primitives.jsx';
+import Menu from '../components/ui/Menu.jsx';
+import { getGoalDeadline, formatFullDate } from '../utils/dates.js';
+
+function goalProgress(goal) {
+  const total = goal.checklist?.length || 0;
+  const done = goal.checklist?.filter(i => i.completed).length || 0;
+  return { total, done, pct: total ? Math.round((done / total) * 100) : null };
+}
 
 export default function Goals() {
   const { goalId } = useParams();
-  const navigate = useNavigate();
-  const { openLockIn } = useLockIn();
-  const {
-    state, addGoal, editGoal, deleteGoal, toggleGoal,
-    toggleChecklistItem, addChecklistItem, deleteChecklistItem, editChecklistItem,
-  } = useApp();
-  const [showModal, setShowModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState(null);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(null);
+  const { state } = useApp();
+  const selected = goalId ? state.goals.find(g => g.id === goalId) : null;
+
+  if (goalId && !selected) {
+    return (
+      <div className="page page-narrow">
+        <section className="panel">
+          <EmptyState
+            icon={Target}
+            title="This goal doesn't exist anymore"
+            description="It may have been deleted on another device."
+            action={<Link className="btn btn-secondary" to="/goals">Back to goals</Link>}
+          />
+        </section>
+      </div>
+    );
+  }
+  if (selected) return <GoalDetail goal={selected} />;
+  return <GoalList />;
+}
+
+/* ------------------------------------------------------------------------ */
+
+function GoalList() {
+  const { state } = useApp();
+  const { openGoalEditor } = useWorkspace();
   const [filter, setFilter] = useState('active');
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [durationDays, setDurationDays] = useState(7);
-  const [initialItems, setInitialItems] = useState('');
-
-  // Detail view state
-  const [newItemText, setNewItemText] = useState('');
-  const [editingItemId, setEditingItemId] = useState(null);
-  const [editItemText, setEditItemText] = useState('');
-  const editInputRef = useRef(null);
-  const newItemRef = useRef(null);
-
-  useEffect(() => {
-    if (editingItemId && editInputRef.current) {
-      editInputRef.current.focus();
-    }
-  }, [editingItemId]);
-
-  // If goalId is set, show goal detail view
-  const selectedGoal = goalId ? state.goals.find(g => g.id === goalId) : null;
-
-  if (selectedGoal) {
-    return <GoalDetail
-      goal={selectedGoal}
-      onBack={() => navigate('/goals')}
-      toggleChecklistItem={toggleChecklistItem}
-      addChecklistItem={addChecklistItem}
-      deleteChecklistItem={deleteChecklistItem}
-      editChecklistItem={editChecklistItem}
-      toggleGoal={toggleGoal}
-      deleteGoal={(id) => { deleteGoal(id); navigate('/goals'); }}
-      editGoal={editGoal}
-    />;
-  }
-
-  const filteredGoals = state.goals.filter(g => {
-    if (filter === 'active') return !g.completed;
-    if (filter === 'completed') return g.completed;
-    return true;
-  });
-
-  const openCreate = () => {
-    setEditingGoal(null);
-    setTitle('');
-    setDescription('');
-    setDurationDays(7);
-    setInitialItems('');
-    setShowModal(true);
-  };
-
-  const handleSave = () => {
-    if (!title.trim()) return;
-
-    const checklistItems = initialItems
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(text => ({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-        text,
-        completed: false,
-      }));
-
-    if (editingGoal) {
-      editGoal(editingGoal.id, {
-        title: title.trim(),
-        description: description.trim(),
-        durationDays: Number(durationDays) || 7,
-      });
-    } else {
-      addGoal({
-        title: title.trim(),
-        description: description.trim(),
-        durationDays: Number(durationDays) || 7,
-        checklist: checklistItems,
-      });
-    }
-    setShowModal(false);
-  };
+  const active = state.goals.filter(g => !g.completed);
+  const done = state.goals.filter(g => g.completed);
+  const list = (filter === 'active' ? active : filter === 'done' ? done : state.goals)
+    .slice()
+    .sort((a, b) => Number(a.completed) - Number(b.completed) || getGoalDeadline(a).diff - getGoalDeadline(b).diff);
 
   return (
-    <div className="centered-page-container">
-      <div className="page-header">
-        <h2>Goals</h2>
-        <p>Track deadlines and progress on larger objectives</p>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-xl)', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
-        <div className="filter-tabs">
-          {['active', 'completed', 'all'].map(f => (
-            <button
-              key={f}
-              className={`filter-tab ${filter === f ? 'active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-        <button className="btn btn-primary" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus size={15} strokeWidth={2} /> New Goal
-        </button>
-      </div>
-
-      {filteredGoals.length === 0 ? (
-        <div className="empty-state">
-          <Target size={40} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }} />
-          <h3>{filter === 'completed' ? 'No completed goals yet' : 'No active goals'}</h3>
-          <p>Create a goal with a deadline and checklist to track your progress.</p>
-          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Plus size={15} strokeWidth={2} /> New Goal
+    <div className="page page-narrow">
+      <PageHeader
+        title="Goals"
+        description="Bigger outcomes with a deadline, broken into steps you can finish one day at a time."
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => openGoalEditor()}>
+            <Plus size={15} strokeWidth={2} aria-hidden="true" /> New goal
           </button>
-        </div>
-      ) : (
-        <div className="card-list">
-          {filteredGoals.map(goal => {
-            const completed = goal.checklist.filter(i => i.completed).length;
-            const total = goal.checklist.length;
-            const percentage = getCompletionPercentage(completed, total);
-            const daysLeft = getDaysRemaining(goal.createdAt, goal.durationDays);
-            const timeClass = daysLeft <= 1 ? 'urgent' : daysLeft <= 3 ? 'warning' : '';
+        }
+      />
 
+      <div className="toolbar">
+        <Segmented
+          label="Filter goals"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'active', label: 'Active', count: active.length },
+            { value: 'done', label: 'Achieved', count: done.length },
+            { value: 'all', label: 'All' },
+          ]}
+        />
+      </div>
+
+      {list.length === 0 ? (
+        <section className="panel">
+          <EmptyState
+            icon={Target}
+            title={filter === 'done' ? 'No goals achieved yet' : state.goals.length ? 'No active goals' : 'Set your first goal'}
+            description={filter === 'done' ? 'When you complete a goal, it moves here.' : 'Give it a deadline and a few concrete steps. Cadence shows the next step on your Today page.'}
+            action={filter !== 'done' && (
+              <button type="button" className="btn btn-primary" onClick={() => openGoalEditor()}>
+                <Plus size={15} strokeWidth={2} /> New goal
+              </button>
+            )}
+          />
+        </section>
+      ) : (
+        <ul className="goal-list">
+          {list.map(goal => {
+            const { total, done: stepsDone, pct } = goalProgress(goal);
+            const deadline = getGoalDeadline(goal);
+            const next = goal.checklist.find(i => !i.completed);
             return (
-              <div
-                key={goal.id}
-                className="card"
-                style={{ cursor: 'pointer' }}
-                onClick={() => navigate(`/goals/${goal.id}`)}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-md)' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-sm)' }}>
-                      <h3 className="card-title" style={{ textDecoration: goal.completed ? 'line-through' : 'none', opacity: goal.completed ? 0.6 : 1 }}>
-                        {goal.title}
-                      </h3>
-                      {goal.completed && <span className="badge badge-success">Complete</span>}
-                    </div>
-                    {goal.description && (
-                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>
-                        {goal.description}
-                      </p>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)', flexWrap: 'wrap' }}>
-                      <div style={{ flex: 1, minWidth: 120 }}>
-                        <div className="progress-bar">
-                          <div
-                            className={`progress-bar-fill ${percentage === 100 ? 'complete' : ''}`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>
-                        {completed}/{total} · {percentage}%
-                      </span>
-                      {!goal.completed && (
-                        <span className={`time-remaining ${timeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)' }}>
-                          <Clock size={12} strokeWidth={1.75} /> {formatTimeRemaining(daysLeft)}
-                        </span>
-                      )}
-                    </div>
+              <li key={goal.id}>
+                <Link to={`/goals/${goal.id}`} className={`goal-card ${goal.completed ? 'is-done' : ''}`}>
+                  <div className="goal-card-head">
+                    <h2 className="goal-card-title">{goal.title}</h2>
+                    {goal.completed
+                      ? <span className="badge badge-success"><Check size={12} strokeWidth={2.5} /> Achieved</span>
+                      : <span className={`due due-${deadline.tone}`}><CalendarDays size={12} strokeWidth={1.75} /> {deadline.label}</span>}
                   </div>
-                  <div style={{ display: 'flex', gap: 'var(--space-xs)', alignItems: 'center' }}>
-                    {!goal.completed && (
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openLockIn(goal.title);
-                        }}
-                        title="Start Lock In session for this goal"
-                        style={{ color: 'var(--accent-secondary)', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <Lock size={12} strokeWidth={1.75} /> Lock In
-                      </button>
-                    )}
-                    <button
-                      className="btn btn-ghost btn-icon"
-                      onClick={(e) => { e.stopPropagation(); openEdit(goal); }}
-                      title="Edit Goal"
-                    >
-                      <Edit3 size={14} strokeWidth={1.75} />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                  {goal.description && <p className="goal-card-desc">{goal.description}</p>}
+                  {total > 0 ? (
+                    <div className="goal-card-progress">
+                      <ProgressBar value={stepsDone} max={total} label={`${goal.title} progress`} tone={goal.completed ? 'success' : 'accent'} />
+                      <span className="t-meta t-num">{stepsDone} of {total} steps · {pct}%</span>
+                    </div>
+                  ) : (
+                    <div className="t-meta">No steps yet — open the goal to add some.</div>
+                  )}
+                  {!goal.completed && next && (
+                    <div className="goal-card-next"><span className="t-caps">Next</span> <span className="truncate">{next.text}</span></div>
+                  )}
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
-
-      {/* Create Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingGoal ? 'Edit Goal' : 'New Goal'}
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={!title.trim()}>
-              {editingGoal ? 'Save Changes' : 'Create Goal'}
-            </button>
-          </>
-        }
-      >
-        <div className="form-group">
-          <label className="form-label">Title</label>
-          <input
-            className="form-input"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="e.g. Finish 30 DSA questions"
-            autoFocus
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Description (optional)</label>
-          <textarea
-            className="form-input"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="What's this goal about?"
-            rows={2}
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Duration (days)</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}>
-            <input
-              className="range-slider"
-              type="range"
-              min={1}
-              max={90}
-              value={durationDays}
-              onChange={e => setDurationDays(Number(e.target.value))}
-            />
-            <span style={{ fontSize: 'var(--font-size-md)', fontWeight: 600, minWidth: 50, textAlign: 'right' }}>
-              {durationDays}d
-            </span>
-          </div>
-        </div>
-
-        {!editingGoal && (
-          <div className="form-group">
-            <label className="form-label">Checklist items (one per line)</label>
-            <textarea
-              className="form-input"
-              value={initialItems}
-              onChange={e => setInitialItems(e.target.value)}
-              placeholder={"LC 209\nLC 3\nLC 424\nLC 76"}
-              rows={5}
-            />
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }
 
-/* ============================================================
-   Goal Detail Component
-   ============================================================ */
-function GoalDetail({
-  goal, onBack, toggleChecklistItem, addChecklistItem,
-  deleteChecklistItem, editChecklistItem, toggleGoal, deleteGoal, editGoal,
-}) {
-  const [newItemText, setNewItemText] = useState('');
-  const [editingItemId, setEditingItemId] = useState(null);
-  const [editItemText, setEditItemText] = useState('');
-  const [showEdit, setShowEdit] = useState(false);
-  const [editTitle, setEditTitle] = useState(goal.title);
-  const [editDesc, setEditDesc] = useState(goal.description);
-  const [editDuration, setEditDuration] = useState(goal.durationDays);
-  const editInputRef = useRef(null);
-  const newItemRef = useRef(null);
+/* ------------------------------------------------------------------------ */
+
+function GoalDetail({ goal }) {
+  const {
+    toggleGoal, toggleChecklistItem, addChecklistItem, deleteChecklistItem, editChecklistItem, restoreChecklistItem,
+  } = useApp();
+  const { openLockIn } = useLockIn();
+  const { openGoalEditor, deleteGoal } = useWorkspace();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const [newStep, setNewStep] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const editRef = useRef(null);
+  const newRef = useRef(null);
 
   useEffect(() => {
-    if (editingItemId && editInputRef.current) {
-      editInputRef.current.focus();
-      editInputRef.current.select();
-    }
-  }, [editingItemId]);
+    if (editingId) { editRef.current?.focus(); editRef.current?.select(); }
+  }, [editingId]);
 
-  const completed = goal.checklist.filter(i => i.completed).length;
-  const total = goal.checklist.length;
-  const percentage = getCompletionPercentage(completed, total);
-  const daysLeft = getDaysRemaining(goal.createdAt, goal.durationDays);
-  const timeClass = daysLeft <= 1 ? 'urgent' : daysLeft <= 3 ? 'warning' : '';
+  const { total, done, pct } = goalProgress(goal);
+  const deadline = getGoalDeadline(goal);
 
-  const handleAddItem = () => {
-    if (!newItemText.trim()) return;
-    addChecklistItem(goal.id, newItemText.trim());
-    setNewItemText('');
-    newItemRef.current?.focus();
+  const addStep = (e) => {
+    e.preventDefault();
+    if (!newStep.trim()) return;
+    addChecklistItem(goal.id, newStep.trim());
+    setNewStep('');
+    newRef.current?.focus();
   };
 
-  const handleEditItem = (itemId) => {
-    if (!editItemText.trim()) return;
-    editChecklistItem(goal.id, itemId, editItemText.trim());
-    setEditingItemId(null);
+  const commitEdit = (item) => {
+    const text = editText.trim();
+    if (text && text !== item.text) editChecklistItem(goal.id, item.id, text);
+    setEditingId(null);
   };
 
-  const handleSaveGoalEdit = () => {
-    editGoal(goal.id, {
-      title: editTitle.trim(),
-      description: editDesc.trim(),
-      durationDays: Number(editDuration) || 7,
-    });
-    setShowEdit(false);
+  const removeStep = (item, index) => {
+    deleteChecklistItem(goal.id, item.id);
+    toast({ title: 'Step deleted', description: item.text, action: { label: 'Undo', onClick: () => restoreChecklistItem(goal.id, item, index) } });
+  };
+
+  const toggleComplete = () => {
+    toggleGoal(goal.id);
+    if (!goal.completed) toast({ tone: 'success', title: 'Goal achieved', description: goal.title });
   };
 
   return (
-    <div className="centered-page-container">
-      <div style={{ marginBottom: 'var(--space-xl)' }}>
-        <button className="btn btn-ghost" onClick={onBack} style={{ marginBottom: 'var(--space-md)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <ArrowLeft size={16} strokeWidth={1.75} /> Back to Goals
-        </button>
-      </div>
+    <div className="page page-narrow">
+      <Link to="/goals" className="back-link"><ArrowLeft size={14} strokeWidth={1.75} /> Goals</Link>
 
-      <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-sm)', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, textDecoration: goal.completed ? 'line-through' : 'none' }}>
-                {goal.title}
-              </h2>
-              {goal.completed && <span className="badge badge-success">Complete</span>}
-            </div>
-            {goal.description && (
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)' }}>{goal.description}</p>
-            )}
-
-            {/* Progress */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
-              <div className="progress-bar" style={{ flex: 1, minWidth: 150 }}>
-                <div
-                  className={`progress-bar-fill ${percentage === 100 ? 'complete' : ''}`}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-              <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
-                {percentage}%
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', gap: 'var(--space-xl)', flexWrap: 'wrap', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-mono)' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>
-                {completed} / {total} items
-              </span>
-              {!goal.completed && (
-                <span className={`time-remaining ${timeClass}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={12} strokeWidth={1.75} /> {formatTimeRemaining(daysLeft)}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: 'var(--space-sm)', flexShrink: 0 }}>
-            <button
-              className={`btn btn-sm ${goal.completed ? 'btn-secondary' : 'btn-primary'}`}
-              onClick={() => toggleGoal(goal.id)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-            >
-              {goal.completed ? 'Reopen' : <><Check size={12} strokeWidth={2} /> Complete</>}
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={() => {
-              setEditTitle(goal.title);
-              setEditDesc(goal.description);
-              setEditDuration(goal.durationDays);
-              setShowEdit(true);
-            }} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <Edit3 size={12} strokeWidth={1.75} /> Edit
-            </button>
-            <button className="btn btn-ghost btn-sm btn-danger" onClick={() => deleteGoal(goal.id)}>
-              <Trash2 size={12} strokeWidth={1.75} />
-            </button>
-          </div>
+      <header className="goal-detail-head">
+        <div className="grow">
+          <h1 className={`t-title ${goal.completed ? 'is-done-text' : ''}`}>{goal.title}</h1>
+          {goal.description && <p className="page-description">{goal.description}</p>}
         </div>
-      </div>
-
-      {/* Checklist */}
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">Checklist</span>
-          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-            {completed}/{total}
-          </span>
-        </div>
-
-        {/* Add new item */}
-        <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)' }}>
-          <input
-            ref={newItemRef}
-            className="form-input"
-            value={newItemText}
-            onChange={e => setNewItemText(e.target.value)}
-            placeholder="Add a checklist item..."
-            onKeyDown={e => e.key === 'Enter' && handleAddItem()}
-          />
-          <button className="btn btn-primary btn-sm" onClick={handleAddItem} disabled={!newItemText.trim()}>
-            Add
+        <div className="page-actions">
+          {!goal.completed && (
+            <IconButton icon={Timer} label="Lock in on this goal" onClick={() => openLockIn(goal.title)} />
+          )}
+          <button type="button" className={`btn ${goal.completed ? 'btn-secondary' : 'btn-primary'}`} onClick={toggleComplete}>
+            {goal.completed ? <><RotateCcw size={14} strokeWidth={2} /> Reopen</> : <><Check size={14} strokeWidth={2.25} /> Mark achieved</>}
           </button>
+          <Menu
+            label="Goal actions"
+            items={[
+              { label: 'Edit goal', icon: Pencil, onSelect: () => openGoalEditor(goal) },
+              { type: 'separator' },
+              { label: 'Delete goal', icon: Trash2, tone: 'danger', onSelect: () => deleteGoal(goal, () => navigate('/goals')) },
+            ]}
+            trigger={(props) => <button {...props} className="icon-btn"><MoreHorizontal size={16} strokeWidth={1.75} /></button>}
+          />
         </div>
+      </header>
 
-        {total === 0 ? (
-          <div style={{ textAlign: 'center', padding: 'var(--space-xl)', color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-            No items yet. Add checklist items above to track your progress.
-          </div>
-        ) : (
-          <div className="checklist">
-            {goal.checklist.map(item => (
-              <div key={item.id} className="checklist-item">
-                <div
-                  className={`checklist-checkbox ${item.completed ? 'checked' : ''}`}
-                  onClick={() => toggleChecklistItem(goal.id, item.id)}
-                />
-                {editingItemId === item.id ? (
-                  <input
-                    ref={editInputRef}
-                    className="form-input"
-                    value={editItemText}
-                    onChange={e => setEditItemText(e.target.value)}
-                    onBlur={() => handleEditItem(item.id)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') handleEditItem(item.id);
-                      if (e.key === 'Escape') setEditingItemId(null);
-                    }}
-                    style={{ padding: 'var(--space-xs) var(--space-sm)' }}
-                  />
-                ) : (
-                  <span
-                    className={`checklist-text ${item.completed ? 'completed' : ''}`}
-                    onDoubleClick={() => { setEditingItemId(item.id); setEditItemText(item.text); }}
-                  >
-                    {item.text}
-                  </span>
-                )}
-                <div className="checklist-actions">
-                  <button
-                    className="btn btn-ghost btn-icon"
-                    onClick={() => { setEditingItemId(item.id); setEditItemText(item.text); }}
-                    title="Edit"
-                  >
-                    <Edit3 size={13} strokeWidth={1.75} />
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-icon btn-danger"
-                    onClick={() => deleteChecklistItem(goal.id, item.id)}
-                    title="Delete"
-                  >
-                    <Trash2 size={13} strokeWidth={1.75} />
-                  </button>
-                </div>
-              </div>
-            ))}
+      <section className="goal-stats" aria-label="Goal progress">
+        <div className="goal-stat">
+          <span className="t-caps">Progress</span>
+          <span className="goal-stat-value t-num">{pct === null ? '—' : `${pct}%`}</span>
+          <span className="t-meta t-num">{total ? `${done} of ${total} steps` : 'Add steps to track progress'}</span>
+        </div>
+        <div className="goal-stat">
+          <span className="t-caps">Deadline</span>
+          <span className="goal-stat-value">{formatFullDate(deadline.date)}</span>
+          <span className={`t-meta due-${goal.completed ? 'later' : deadline.tone}`}>{goal.completed ? 'Achieved' : deadline.label}</span>
+        </div>
+        {total > 0 && (
+          <div className="goal-stat goal-stat-bar">
+            <ProgressBar value={done} max={total} label="Steps completed" tone={goal.completed ? 'success' : 'accent'} />
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Edit Goal Modal */}
-      <Modal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        title="Edit Goal"
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setShowEdit(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSaveGoalEdit} disabled={!editTitle.trim()}>Save</button>
-          </>
-        }
-      >
-        <div className="form-group">
-          <label className="form-label">Title</label>
-          <input className="form-input" value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+      <section className="panel" aria-labelledby="steps-heading">
+        <div className="panel-header">
+          <h2 id="steps-heading" className="t-section">Steps</h2>
+          <span className="t-meta t-num">{done}/{total}</span>
         </div>
-        <div className="form-group">
-          <label className="form-label">Description</label>
-          <textarea className="form-input" value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={2} />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Duration (days)</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}>
-            <input
-              className="range-slider"
-              type="range"
-              min={1}
-              max={90}
-              value={editDuration}
-              onChange={e => setEditDuration(Number(e.target.value))}
-            />
-            <span style={{ fontSize: 'var(--font-size-md)', fontWeight: 600, minWidth: 50, textAlign: 'right' }}>
-              {editDuration}d
-            </span>
-          </div>
-        </div>
-      </Modal>
+
+        <form className="quick-add quick-add-bordered" onSubmit={addStep}>
+          <Plus size={15} strokeWidth={2} aria-hidden="true" />
+          <label htmlFor="new-step" className="sr-only">Add a step</label>
+          <input
+            id="new-step"
+            ref={newRef}
+            value={newStep}
+            onChange={e => setNewStep(e.target.value)}
+            placeholder="Add a step — press Enter to save"
+            maxLength={200}
+            autoComplete="off"
+          />
+        </form>
+
+        {total === 0 ? (
+          <p className="t-meta panel-pad">Break the goal into steps small enough to finish in a sitting.</p>
+        ) : (
+          <ul className="item-list">
+            {goal.checklist.map((item, index) => (
+              <li key={item.id} className={`item-row step-row ${item.completed ? 'is-done' : ''}`}>
+                <CheckButton
+                  shape="square"
+                  checked={item.completed}
+                  onChange={() => toggleChecklistItem(goal.id, item.id)}
+                  label={item.completed ? `Mark step “${item.text}” as not done` : `Complete step “${item.text}”`}
+                />
+                {editingId === item.id ? (
+                  <input
+                    ref={editRef}
+                    className="input input-sm grow"
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    onBlur={() => commitEdit(item)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitEdit(item);
+                      if (e.key === 'Escape') { e.stopPropagation(); setEditingId(null); }
+                    }}
+                    aria-label="Edit step"
+                  />
+                ) : (
+                  <span className="item-main item-main-static" onDoubleClick={() => { setEditingId(item.id); setEditText(item.text); }}>
+                    <span className="item-title">{item.text}</span>
+                  </span>
+                )}
+                <div className="item-actions">
+                  <IconButton icon={Pencil} size={14} label="Edit step" className="hover-reveal" onClick={() => { setEditingId(item.id); setEditText(item.text); }} />
+                  <IconButton icon={Trash2} size={14} label="Delete step" tone="danger" className="hover-reveal" onClick={() => removeStep(item, index)} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

@@ -1,268 +1,152 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Plus, Repeat, MoreHorizontal, Pencil, Trash2, Timer, History, Flame } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import Modal from '../components/Modal.jsx';
-import RoutineGrid, { RoutineMiniGrid } from '../components/RoutineGrid.jsx';
-import { createDefaultPattern, getCyclePosition, getRoutineDayInfo, getNextActiveDay } from '../utils/recurrence.js';
-import { Plus, Repeat, Edit3, Trash2 } from 'lucide-react';
-
-const EMOJI_OPTIONS = ['🏋️', '📚', '🧴', '🍳', '💊', '🎵', '🏃', '🧘', '💻', '✍️', '🎨', '🌿', '💤', '🧹', '📋'];
+import { useLockIn } from '../context/LockInContext.jsx';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import { PageHeader, EmptyState, CheckButton } from '../components/ui/primitives.jsx';
+import Menu from '../components/ui/Menu.jsx';
+import RoutineIcon from '../components/RoutineIcon.jsx';
+import RoutineSequence from '../components/RoutineSequence.jsx';
+import { describeSchedule, getConsistency, getStreak, getTodayStatus } from '../utils/routineStats.js';
+import { relativeDayLabel } from '../utils/dates.js';
 
 export default function Routines() {
-  const { state, addRoutine, editRoutine, deleteRoutine } = useApp();
-  const [showModal, setShowModal] = useState(false);
-  const [editingRoutine, setEditingRoutine] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
+  const { state, toggleRoutineDay } = useApp();
+  const { openLockIn } = useLockIn();
+  const { openRoutineEditor, deleteRoutine } = useWorkspace();
+  const [params, setParams] = useSearchParams();
+  const [expanded, setExpanded] = useState(() => params.get('open'));
+  const refs = useRef({});
 
-  // Form state
-  const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState('📋');
-  const [cycleLength, setCycleLength] = useState(7);
-  const [pattern, setPattern] = useState(createDefaultPattern(7));
+  // Deep link (?open=id) from Today / command menu: expand and scroll into view.
+  useEffect(() => {
+    const id = params.get('open');
+    if (!id) return;
+    setExpanded(id);
+    requestAnimationFrame(() => refs.current[id]?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+    params.delete('open');
+    setParams(params, { replace: true });
+  }, [params, setParams]);
 
-  const openCreate = () => {
-    setEditingRoutine(null);
-    setName('');
-    setEmoji('📋');
-    setCycleLength(7);
-    setPattern(createDefaultPattern(7));
-    setShowModal(true);
-  };
-
-  const openEdit = (routine) => {
-    setEditingRoutine(routine);
-    setName(routine.name);
-    setEmoji(routine.emoji || '📋');
-    setCycleLength(routine.cycleLength);
-    setPattern([...routine.pattern]);
-    setShowModal(true);
-  };
-
-  const handleCycleLengthChange = (newLength) => {
-    const len = Math.max(1, Math.min(20, Number(newLength)));
-    setCycleLength(len);
-    // Resize pattern: keep existing data, add new or trim
-    const newPattern = Array.from({ length: len }, (_, i) =>
-      i < pattern.length ? pattern[i] : { active: false, label: '' }
-    );
-    setPattern(newPattern);
-  };
-
-  const handleSave = () => {
-    if (!name.trim()) return;
-
-    if (editingRoutine) {
-      editRoutine(editingRoutine.id, {
-        name: name.trim(),
-        emoji,
-        cycleLength,
-        pattern,
-      });
-    } else {
-      addRoutine({
-        name: name.trim(),
-        emoji,
-        cycleLength,
-        pattern,
-      });
-    }
-    setShowModal(false);
-  };
-
-  const handleDelete = (id) => {
-    if (confirm('Delete this routine? This cannot be undone.')) {
-      deleteRoutine(id);
-      if (expandedId === id) setExpandedId(null);
-    }
-  };
-
-  const today = new Date();
+  // Due today first, then the rest in creation order.
+  const routines = [...state.routines].sort((a, b) => {
+    const sa = getTodayStatus(a, state.completions);
+    const sb = getTodayStatus(b, state.completions);
+    const rank = (s) => (s.dueToday ? (s.done ? 1 : 0) : 2);
+    return rank(sa) - rank(sb);
+  });
 
   return (
-    <div className="centered-page-container">
-      <div className="page-header">
-        <h2>Routines</h2>
-        <p>Build repeating patterns that work for you</p>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-xl)' }}>
-        <button className="btn btn-primary" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus size={15} strokeWidth={2} /> New Routine
-        </button>
-      </div>
-
-      {state.routines.length === 0 ? (
-        <div className="empty-state">
-          <Repeat size={40} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }} />
-          <h3>No routines yet</h3>
-          <p>Create your first routine and build a custom repeating pattern.</p>
-          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Plus size={15} strokeWidth={2} /> New Routine
+    <div className="page page-narrow">
+      <PageHeader
+        title="Routines"
+        description="Repeating rhythms on a 1–20 day cycle. Check off today, or catch up on a day you missed."
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => openRoutineEditor()}>
+            <Plus size={15} strokeWidth={2} aria-hidden="true" /> New routine
           </button>
-        </div>
+        }
+      />
+
+      {routines.length === 0 ? (
+        <section className="panel">
+          <EmptyState
+            icon={Repeat}
+            title="Design your first routine"
+            description="Choose how long the cycle is — a week, ten days, any length up to 20 — then pick which days it runs. Cadence keeps your place in the sequence."
+            action={
+              <button type="button" className="btn btn-primary" onClick={() => openRoutineEditor()}>
+                <Plus size={15} strokeWidth={2} /> New routine
+              </button>
+            }
+          />
+        </section>
       ) : (
-        <div className="card-list">
-          {state.routines.map(routine => {
-            const cyclePos = getCyclePosition(routine, today);
-            const dayInfo = getRoutineDayInfo(routine, today);
-            const nextActive = !dayInfo.active ? getNextActiveDay(routine, today) : null;
-            const isExpanded = expandedId === routine.id;
-            const activeDays = routine.pattern.filter(d => d.active).length;
+        <ul className="routine-list">
+          {routines.map(routine => {
+            const status = getTodayStatus(routine, state.completions);
+            const consistency = getConsistency(routine, state.completions, 28);
+            const streak = getStreak(routine, state.completions);
+            const isOpen = expanded === routine.id;
 
             return (
-              <div key={routine.id} className="card animate-pop">
-                {/* Routine Header */}
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', cursor: 'pointer' }}
-                  onClick={() => setExpandedId(isExpanded ? null : routine.id)}
-                >
-                  <div className="dashboard-card-icon" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                    {routine.emoji || '📋'}
+              <li
+                key={routine.id}
+                ref={el => { refs.current[routine.id] = el; }}
+                className={`routine-card ${status.dueToday && !status.done ? 'is-due' : ''}`}
+              >
+                <div className="routine-card-head">
+                  <RoutineIcon routine={routine} size="lg" />
+                  <div className="grow">
+                    <h2 className="routine-card-title">{routine.name}</h2>
+                    <div className="t-meta t-num">
+                      {describeSchedule(routine)} · Day {status.position + 1} of {routine.cycleLength}
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xs)' }}>
-                      <span style={{ fontWeight: 500 }}>{routine.name}</span>
-                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-                        {routine.cycleLength}-day cycle · {activeDays} active
+
+                  <div className="routine-card-status">
+                    {status.dueToday ? (
+                      <label className={`today-toggle ${status.done ? 'is-done' : ''}`}>
+                        <CheckButton
+                          checked={status.done}
+                          onChange={() => toggleRoutineDay(routine.id)}
+                          label={status.done ? `Mark ${routine.name} as not done today` : `Complete ${routine.name} for today`}
+                        />
+                        <span>{status.done ? 'Done today' : status.label ? `Today · ${status.label}` : 'Due today'}</span>
+                      </label>
+                    ) : (
+                      <span className="t-meta">
+                        {status.next ? `Next: ${relativeDayLabel(status.next.date)}` : 'No days scheduled'}
                       </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                      <RoutineMiniGrid pattern={routine.pattern} currentIndex={cyclePos} />
-                      {dayInfo.active ? (
-                        <span className="badge badge-success" style={{ fontSize: '10px' }}>
-                          Active today{dayInfo.label ? ` · ${dayInfo.label}` : ''}
-                        </span>
-                      ) : nextActive ? (
-                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-                          Next in {nextActive.daysUntil}d
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
-                          No active days
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
-                  <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(routine); }} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Edit3 size={12} strokeWidth={1.75} /> Edit
-                    </button>
-                    <button className="btn btn-ghost btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(routine.id); }}>
-                      <Trash2 size={12} strokeWidth={1.75} />
-                    </button>
-                  </div>
+
+                  <Menu
+                    label={`Actions for ${routine.name}`}
+                    items={[
+                      { label: 'Edit routine', icon: Pencil, onSelect: () => openRoutineEditor(routine) },
+                      { label: isOpen ? 'Hide history' : 'View history', icon: History, onSelect: () => setExpanded(isOpen ? null : routine.id) },
+                      { label: 'Lock in on this', icon: Timer, onSelect: () => openLockIn(routine.name) },
+                      { type: 'separator' },
+                      { label: 'Delete', icon: Trash2, tone: 'danger', onSelect: () => deleteRoutine(routine) },
+                    ]}
+                    trigger={(props) => (
+                      <button {...props} className="icon-btn"><MoreHorizontal size={16} strokeWidth={1.75} /></button>
+                    )}
+                  />
                 </div>
 
-                {/* Expanded view */}
-                {isExpanded && (
-                  <div style={{ marginTop: 'var(--space-xl)', paddingTop: 'var(--space-xl)', borderTop: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Pattern · Day {cyclePos + 1} of {routine.cycleLength}
-                    </div>
-                    <RoutineGrid
-                      pattern={routine.pattern}
-                      onChange={() => {}}
-                      readOnly
-                      highlightIndex={cyclePos}
-                    />
-                  </div>
-                )}
-              </div>
+                <RoutineSequence
+                  key={isOpen ? 'history' : 'current'}
+                  routine={routine}
+                  completions={state.completions}
+                  onToggleDay={(date) => toggleRoutineDay(routine.id, date)}
+                  navigable={isOpen}
+                />
+
+                <div className="routine-card-foot">
+                  {consistency.scheduled > 0 ? (
+                    <span className="t-meta t-num">
+                      <strong>{consistency.done}</strong> of {consistency.scheduled} scheduled days in the last 4 weeks
+                    </span>
+                  ) : (
+                    <span className="t-meta">History builds as you check days off</span>
+                  )}
+                  {streak >= 2 && (
+                    <span className="streak t-num" title="Consecutive scheduled days completed">
+                      <Flame size={12} strokeWidth={2} aria-hidden="true" /> {streak} in a row
+                    </span>
+                  )}
+                  <button type="button" className="btn btn-ghost btn-xs ml-auto" onClick={() => setExpanded(isOpen ? null : routine.id)} aria-expanded={isOpen}>
+                    {isOpen ? 'Hide history' : 'History'}
+                  </button>
+                </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
-
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingRoutine ? 'Edit Routine' : 'Create Routine'}
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>
-              {editingRoutine ? 'Save Changes' : 'Create Routine'}
-            </button>
-          </>
-        }
-      >
-        <div className="form-group">
-          <label className="form-label">Name</label>
-          <input
-            className="form-input"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="e.g. Gym, Hair Care, Cooking..."
-            autoFocus
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Emoji</label>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {EMOJI_OPTIONS.map(e => (
-              <button
-                key={e}
-                onClick={() => setEmoji(e)}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 'var(--radius-md)',
-                  border: emoji === e ? '2px solid var(--accent-primary)' : '2px solid var(--border-primary)',
-                  background: emoji === e ? 'var(--accent-primary-glow)' : 'var(--bg-card)',
-                  fontSize: '1.1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)',
-                }}
-              >
-                {e}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Cycle Length: {cycleLength} days</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}>
-            <input
-              className="range-slider"
-              type="range"
-              min={1}
-              max={20}
-              value={cycleLength}
-              onChange={e => handleCycleLengthChange(e.target.value)}
-            />
-            <input
-              className="form-input"
-              type="number"
-              min={1}
-              max={20}
-              value={cycleLength}
-              onChange={e => handleCycleLengthChange(e.target.value)}
-              style={{ width: 60, textAlign: 'center', padding: 'var(--space-sm)' }}
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">
-            Pattern
-            <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: 'var(--space-sm)' }}>
-              Click to toggle · Double-click active day to add a label
-            </span>
-          </label>
-          <RoutineGrid
-            pattern={pattern}
-            onChange={setPattern}
-          />
-          <div style={{ marginTop: 'var(--space-sm)', fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
-            {pattern.filter(d => d.active).length} of {cycleLength} days active
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

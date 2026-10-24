@@ -1,100 +1,82 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { LogIn, Sparkles } from 'lucide-react';
-import Logo from '../components/Logo.jsx';
+import { AuthLayout, AuthError, PasswordInput, DemoLink } from './AuthLayout.jsx';
+import { Spinner } from '../components/ui/primitives.jsx';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !password) {
-      setError('Please enter both username and password.');
-      return;
-    }
+    const errs = {};
+    if (!username.trim()) errs.username = 'Enter your username.';
+    if (!password) errs.password = 'Enter your password.';
+    setFieldErrors(errs);
+    if (Object.keys(errs).length) return;
 
     try {
       setError('');
       setIsSubmitting(true);
       await login(username.trim(), password);
-      navigate('/');
+      const from = location.state?.from?.pathname;
+      navigate(from && from !== '/login' ? from : '/', { replace: true });
     } catch (err) {
-      setError(err.message || 'Failed to log in.');
-    } finally {
+      setError(err.message || 'Something went wrong. Please try again.');
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="auth-page-container">
-      <div className="glass-panel auth-card glow-border">
-        <div className="auth-header">
-          <div className="auth-logo">
-            <Logo size={24} style={{ color: 'var(--accent-primary)' }} />
-          </div>
-          <h1>Welcome Back</h1>
-          <p>Enter your Cadence rhythm</p>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to pick up your rhythm where you left it."
+      footer={<>New to Cadence? <Link to="/signup" className="link">Create an account</Link> or <DemoLink /></>}
+    >
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <AuthError>{error}</AuthError>
+
+        <div className={`field ${fieldErrors.username ? 'has-error' : ''}`}>
+          <label className="field-label" htmlFor="username">Username</label>
+          <input
+            id="username"
+            className="input"
+            value={username}
+            onChange={(e) => { setUsername(e.target.value); setFieldErrors(f => ({ ...f, username: '' })); }}
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            aria-invalid={!!fieldErrors.username || undefined}
+            aria-describedby={fieldErrors.username ? 'username-error' : undefined}
+            autoFocus
+          />
+          {fieldErrors.username && <div id="username-error" className="field-error">{fieldErrors.username}</div>}
         </div>
 
-        {error && <div className="auth-error-banner">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label className="form-label" htmlFor="username">Username</label>
-            <input
-              id="username"
-              type="text"
-              className="form-input"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. alex_runner"
-              autoComplete="username"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary auth-submit-btn"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              'Logging in...'
-            ) : (
-              <>
-                <LogIn size={16} /> Log In
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          Don't have an account?{' '}
-          <Link to="/signup" className="auth-link">
-            Sign up <Sparkles size={12} style={{ display: 'inline', marginLeft: 2 }} />
-          </Link>
+        <div className={`field ${fieldErrors.password ? 'has-error' : ''}`}>
+          <label className="field-label" htmlFor="password">Password</label>
+          <PasswordInput
+            id="password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setFieldErrors(f => ({ ...f, password: '' })); }}
+            autoComplete="current-password"
+            invalid={!!fieldErrors.password}
+            describedBy={fieldErrors.password ? 'password-error' : undefined}
+          />
+          {fieldErrors.password && <div id="password-error" className="field-error">{fieldErrors.password}</div>}
         </div>
-      </div>
-    </div>
+
+        <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={isSubmitting}>
+          {isSubmitting ? <><Spinner /> Signing in…</> : 'Sign in'}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

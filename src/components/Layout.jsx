@@ -1,260 +1,262 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Sun, Repeat, CheckSquare, Target, Settings as SettingsIcon, Lock, Plus, Search,
+  LogOut, ChevronsUpDown, WifiOff, RotateCw, FlaskConical, Sparkles, CalendarDays,
+} from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { useLockIn } from '../context/LockInContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { ACCENT_THEMES } from '../utils/helpers.js';
-
-import {
-  LayoutDashboard,
-  CheckSquare,
-  Target,
-  Repeat,
-  Settings as SettingsIcon,
-  Lock,
-  Menu,
-  X,
-  LogOut,
-  User
-} from 'lucide-react';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import Menu from './ui/Menu.jsx';
 import Logo from './Logo.jsx';
-
-const navItems = [
-  { to: '/', Icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/tasks', Icon: CheckSquare, label: 'Tasks' },
-  { to: '/goals', Icon: Target, label: 'Goals' },
-  { to: '/routines', Icon: Repeat, label: 'Routines' },
-  { to: '/settings', Icon: SettingsIcon, label: 'Settings' },
-];
+import { isRoutineActiveToday, isRoutineCompletedOn } from '../utils/recurrence.js';
+import { getTaskDue } from '../utils/dates.js';
 
 const BACKGROUND_GIFS = [
-  'https://media.giphy.com/media/l0HlS53Vd2eK2WvSw/giphy.gif', // Lofi room night rain
-  'https://media.giphy.com/media/VPlgUzkP5yPba/giphy.gif', // Lofi cozy laptop cat
-  'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif', // Cozy Cafe
-  'https://media.giphy.com/media/43F752JzgNn44/giphy.gif', // Sunset train / cyber city
-  'https://media.giphy.com/media/jP4pKgC0Q2Tpa2k4p8/giphy.gif'  // Coffee cup pixel art
+  'https://media.giphy.com/media/l0HlS53Vd2eK2WvSw/giphy.gif',
+  'https://media.giphy.com/media/VPlgUzkP5yPba/giphy.gif',
+  'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif',
+  'https://media.giphy.com/media/43F752JzgNn44/giphy.gif',
+  'https://media.giphy.com/media/jP4pKgC0Q2Tpa2k4p8/giphy.gif',
 ];
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+export const MOD_KEY = isMac ? '⌘' : 'Ctrl';
+
+function useAmbientBackground(settings) {
+  const enabled = settings?.showBanner === true;
+  const active = settings?.activeBackground || 'random';
+  const slots = settings?.customBackgrounds || [];
+  const [randomUrl] = useState(() => BACKGROUND_GIFS[Math.floor(Math.random() * BACKGROUND_GIFS.length)]);
+  if (!enabled) return null;
+  if (active === 'random') return randomUrl;
+  return slots.find(s => s.id === active)?.url || randomUrl;
+}
+
 export default function Layout({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
+  const { state, apiAvailable, retryConnection } = useApp();
+  const { openLockIn, activeSession } = useLockIn();
+  const { user, logout, isDemo } = useAuth();
+  const { openTaskEditor, openRoutineEditor, openGoalEditor, openCommandMenu, openQuickAdd } = useWorkspace();
   const navigate = useNavigate();
-  const { state } = useApp();
-  const { openLockIn } = useLockIn();
-  const { user, logout } = useAuth();
-  const [backgroundUrl, setBackgroundUrl] = useState('');
-  
-  const accentTheme = state?.settings?.accentColor || 'indigo';
-  const bgBlur = state?.settings?.bgBlur ?? 25;
-  const bgDim = state?.settings?.bgDim ?? 60;
-  const activeBackground = state?.settings?.activeBackground || 'random';
-  const customBackgrounds = state?.settings?.customBackgrounds || [];
+  const location = useLocation();
+  const [retrying, setRetrying] = useState(false);
 
-  useEffect(() => {
-    const themeData = ACCENT_THEMES[accentTheme] || ACCENT_THEMES.indigo;
-    const root = document.documentElement;
-    root.style.setProperty('--accent-primary', themeData.primary);
-    root.style.setProperty('--accent-primary-hover', themeData.hover);
-    root.style.setProperty('--accent-primary-glow', themeData.glow);
-    root.style.setProperty('--accent-secondary', themeData.secondary);
-    root.style.setProperty('--accent-gradient', themeData.gradient);
-  }, [accentTheme]);
-
-  // Apply UI theme (retro, default, etc.) via data attribute on <html>
-  const uiTheme = state?.settings?.uiTheme || 'default';
-  useEffect(() => {
-    const root = document.documentElement;
-    if (uiTheme && uiTheme !== 'default') {
-      root.dataset.uiTheme = uiTheme;
-    } else {
-      delete root.dataset.uiTheme;
-    }
-    return () => { delete root.dataset.uiTheme; };
-  }, [uiTheme]);
+  const ambientUrl = useAmbientBackground(state.settings);
 
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty('--app-bg-blur', `${bgBlur}px`);
-    root.style.setProperty('--app-bg-dim', `${bgDim / 100}`);
-  }, [bgBlur, bgDim]);
+    root.style.setProperty('--ambient-blur', `${state.settings?.bgBlur ?? 25}px`);
+    root.style.setProperty('--ambient-dim', `${(state.settings?.bgDim ?? 60) / 100}`);
+  }, [state.settings?.bgBlur, state.settings?.bgDim]);
 
-  // Handle ambient background GIF selection on mount
-  useEffect(() => {
-    const randomGif = BACKGROUND_GIFS[Math.floor(Math.random() * BACKGROUND_GIFS.length)];
-    if (activeBackground === 'random') {
-      setBackgroundUrl(randomGif);
-    } else {
-      const activeSlot = customBackgrounds.find(bg => bg.id === activeBackground);
-      setBackgroundUrl(activeSlot?.url || randomGif);
-    }
-  }, []);
+  // Scroll to top on route change
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [location.pathname]);
 
-  // Update background when user changes active slot or edits a slot's URL in Settings
-  useEffect(() => {
-    if (activeBackground !== 'random') {
-      const activeSlot = customBackgrounds.find(bg => bg.id === activeBackground);
-      if (activeSlot?.url) {
-        setBackgroundUrl(activeSlot.url);
-      }
-    } else {
-      // If switched back to random, select a random preset if not already loaded from presets
-      const isPresetLoaded = BACKGROUND_GIFS.includes(backgroundUrl);
-      if (!isPresetLoaded) {
-        const randomGif = BACKGROUND_GIFS[Math.floor(Math.random() * BACKGROUND_GIFS.length)];
-        setBackgroundUrl(randomGif);
-      }
-    }
-  }, [activeBackground, customBackgrounds]);
+  const counts = useMemo(() => {
+    const today = new Date();
+    const routinesDue = state.routines.filter(r => isRoutineActiveToday(r) && !isRoutineCompletedOn(state.completions, r.id, today)).length;
+    const tasksDue = state.tasks.filter(t => {
+      if (t.completed) return false;
+      const due = getTaskDue(t, today);
+      return due && due.diff <= 0;
+    }).length;
+    return { routinesDue, tasksDue };
+  }, [state.routines, state.tasks, state.completions]);
 
-  const closeSidebar = () => setSidebarOpen(false);
+  const nav = [
+    { to: '/', label: 'Today', Icon: Sun, count: counts.routinesDue + counts.tasksDue },
+    { to: '/calendar', label: 'Calendar', Icon: CalendarDays },
+    { to: '/routines', label: 'Routines', Icon: Repeat },
+    { to: '/tasks', label: 'Tasks', Icon: CheckSquare },
+    { to: '/goals', label: 'Goals', Icon: Target },
+  ];
 
-  const bannerActive = state?.settings?.showBanner !== false;
+  const createItems = [
+    { label: 'Quick add…', icon: Sparkles, shortcut: 'Q', onSelect: () => openQuickAdd() },
+    { type: 'separator' },
+    { label: 'Task', icon: CheckSquare, shortcut: 'N', onSelect: () => openTaskEditor() },
+    { label: 'Routine', icon: Repeat, shortcut: '⇧R', onSelect: () => openRoutineEditor() },
+    { label: 'Goal', icon: Target, onSelect: () => openGoalEditor() },
+  ];
 
-  // Entrance animation class — applied once on mount
-  const [appEntering, setAppEntering] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setAppEntering(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
-
+  // Leave the protected route first so the auth gate lands on the home page, not /login.
   const handleLogout = async () => {
-    closeSidebar();
+    navigate('/', { replace: true });
     await logout();
-    navigate('/');
   };
 
+  // A full page load guarantees no demo state lingers in memory.
+  const exitDemo = async (to) => {
+    await logout();
+    window.location.assign(to);
+  };
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    await retryConnection();
+    setRetrying(false);
+  };
+
+  const initial = (user?.username || '?').slice(0, 1).toUpperCase();
+
   return (
-    <div className={`app-layout${appEntering ? ' cadence-entering' : ''}`}>
-      {/* Full screen ambient GIF background */}
-      {bannerActive && backgroundUrl && (
-        <>
-          <div className="app-ambient-bg" style={{ backgroundImage: `url(${backgroundUrl})` }} />
-          <div className="app-ambient-overlay" />
-        </>
+    <div className={`shell ${ambientUrl ? 'has-ambient' : ''}`}>
+      <a href="#main" className="skip-link">Skip to content</a>
+
+      {ambientUrl && (
+        <div className="ambient" aria-hidden="true">
+          <div className="ambient-image" style={{ backgroundImage: `url(${ambientUrl})` }} />
+          <div className="ambient-dim" />
+        </div>
       )}
 
-      {/* Mobile toggle */}
-      <button
-        className="mobile-menu-toggle"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        aria-label="Toggle menu"
-      >
-        {sidebarOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
-      </button>
-
-      {/* Overlay */}
-      <div
-        className={`mobile-overlay ${sidebarOpen ? 'visible' : ''}`}
-        onClick={closeSidebar}
-      />
-
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Logo size={32} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-          <div>
-            <h1>Cadence</h1>
-            <div className="brand-tagline">Your rhythm, your rules</div>
-          </div>
+      {/* ---------------- Desktop sidebar ---------------- */}
+      <aside className="sidebar" aria-label="Primary">
+        <div className="sidebar-top">
+          <NavLink to="/" className="brand" aria-label="Cadence — Today">
+            <Logo size={20} />
+            <span className="brand-name">Cadence</span>
+          </NavLink>
+          <Menu
+            label="Create new"
+            align="start"
+            items={createItems}
+            trigger={(props) => (
+              <button {...props} className="icon-btn" data-tooltip="Create">
+                <Plus size={16} strokeWidth={2} />
+              </button>
+            )}
+          />
         </div>
 
-        <nav className="sidebar-nav">
-          <button
-            type="button"
-            className="nav-link lock-in-sidebar-btn"
-            onClick={() => {
-              closeSidebar();
-              openLockIn();
-            }}
-            style={{
-              background: 'var(--accent-primary-glow)',
-              color: 'var(--accent-secondary)',
-              fontWeight: 600,
-              marginBottom: 'var(--space-sm)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            <span className="nav-icon" style={{ display: 'flex', alignItems: 'center' }}>
-              <Lock size={18} strokeWidth={1.75} />
-            </span>
-            <span>LOCK IN</span>
-          </button>
+        <button type="button" className="sidebar-search" onClick={openCommandMenu}>
+          <Search size={14} strokeWidth={1.75} aria-hidden="true" />
+          <span className="grow">Search</span>
+          <kbd className="kbd">{MOD_KEY} K</kbd>
+        </button>
 
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }
-              onClick={closeSidebar}
-            >
-              <span className="nav-icon" style={{ display: 'flex', alignItems: 'center' }}>
-                <item.Icon size={18} strokeWidth={1.75} />
-              </span>
-              <span>{item.label}</span>
+        <nav className="sidebar-nav">
+          {nav.map(({ to, label, Icon, count }) => (
+            <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'is-active' : ''}`}>
+              <Icon size={16} strokeWidth={1.75} aria-hidden="true" />
+              <span className="grow">{label}</span>
+              {count > 0 && <span className="nav-count t-num" aria-label={`${count} due`}>{count}</span>}
             </NavLink>
           ))}
         </nav>
 
-        {/* User profile & Logout at bottom of sidebar */}
-        {user && (
-          <div style={{ marginTop: 'auto', padding: '0 var(--space-md)', paddingBottom: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              padding: '8px 12px',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.06)',
-            }}>
-              <div style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: 'var(--accent-primary-glow)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent-primary)',
-              }}>
-                <User size={14} />
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user.username}
-                </div>
-                <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Authenticated
-                </div>
-              </div>
-            </div>
+        <div className="sidebar-section">
+          <button
+            type="button"
+            className={`lockin-launch ${activeSession ? 'is-live' : ''}`}
+            onClick={() => openLockIn()}
+          >
+            <Lock size={15} strokeWidth={1.9} aria-hidden="true" />
+            <span className="grow">{activeSession ? 'Session in progress' : 'Lock in'}</span>
+            <kbd className="kbd">L</kbd>
+          </button>
+        </div>
 
-            <button
-              onClick={handleLogout}
-              className="nav-link"
-              style={{
-                width: '100%',
-                justifyContent: 'flex-start',
-                color: 'var(--color-danger)',
-                background: 'transparent',
-              }}
-            >
-              <span className="nav-icon" style={{ display: 'flex', alignItems: 'center' }}>
-                <LogOut size={16} strokeWidth={1.75} />
-              </span>
-              <span>Log Out</span>
+        <div className="sidebar-bottom">
+          <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'is-active' : ''}`}>
+            <SettingsIcon size={16} strokeWidth={1.75} aria-hidden="true" />
+            <span className="grow">Settings</span>
+          </NavLink>
+          {user && (
+            <Menu
+              label="Account"
+              align="start"
+              width={220}
+              items={[
+                { type: 'label', label: isDemo ? 'Demo workspace' : `Signed in as ${user.username}` },
+                { label: 'Settings', icon: SettingsIcon, onSelect: () => navigate('/settings') },
+                { type: 'separator' },
+                isDemo
+                  ? { label: 'Exit demo', icon: LogOut, onSelect: () => exitDemo('/') }
+                  : { label: 'Sign out', icon: LogOut, onSelect: handleLogout },
+              ]}
+              trigger={(props) => (
+                <button {...props} className="account-btn">
+                  <span className="avatar" aria-hidden="true">{initial}</span>
+                  <span className="grow truncate">{user.username}</span>
+                  <ChevronsUpDown size={14} strokeWidth={1.75} aria-hidden="true" className="t-tertiary" />
+                </button>
+              )}
+            />
+          )}
+        </div>
+      </aside>
+
+      {/* ---------------- Mobile top bar ---------------- */}
+      <header className="topbar">
+        <NavLink to="/" className="brand" aria-label="Cadence — Today">
+          <Logo size={18} />
+          <span className="brand-name">Cadence</span>
+        </NavLink>
+        <div className="row gap-1">
+          <button type="button" className="icon-btn" onClick={openCommandMenu} aria-label="Search">
+            <Search size={18} strokeWidth={1.75} />
+          </button>
+          <NavLink to="/settings" className={({ isActive }) => `icon-btn ${isActive ? 'is-live' : ''}`} aria-label="Settings">
+            <SettingsIcon size={18} strokeWidth={1.75} />
+          </NavLink>
+          <button type="button" className={`icon-btn ${activeSession ? 'is-live' : ''}`} onClick={() => openLockIn()} aria-label="Lock in">
+            <Lock size={18} strokeWidth={1.75} />
+          </button>
+          <Menu
+            label="Create new"
+            items={createItems.map(({ shortcut, ...i }) => i)}
+            trigger={(props) => (
+              <button {...props} className="icon-btn icon-btn-accent">
+                <Plus size={18} strokeWidth={2} />
+              </button>
+            )}
+          />
+        </div>
+      </header>
+
+      {/* ---------------- Main ---------------- */}
+      <main id="main" className="main" tabIndex={-1}>
+        {isDemo && (
+          <div className="demo-banner" role="status">
+            <FlaskConical size={15} strokeWidth={1.75} aria-hidden="true" />
+            <span className="grow">
+              <strong>You're exploring a demo.</strong> Try anything — it's sample data saved only in this browser.
+            </span>
+            <div className="demo-banner-actions">
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => exitDemo('/')}>Exit demo</button>
+              <button type="button" className="btn btn-sm btn-primary" onClick={() => exitDemo('/signup')}>Create your account</button>
+            </div>
+          </div>
+        )}
+        {!apiAvailable && !isDemo && (
+          <div className="offline-banner" role="status">
+            <WifiOff size={15} strokeWidth={1.75} aria-hidden="true" />
+            <span className="grow">Can’t reach the Cadence server. You’re viewing the copy saved on this device, and changes may not be saved.</span>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={handleRetry} disabled={retrying}>
+              <RotateCw size={13} strokeWidth={2} className={retrying ? 'spin' : ''} /> Retry
             </button>
           </div>
         )}
-      </aside>
-
-      {/* Main content */}
-      <main className="main-content">
-        {children}
+        <div className="main-inner" key={location.pathname.split('/')[1] || 'today'}>
+          {children}
+        </div>
       </main>
+
+      {/* ---------------- Mobile tab bar ---------------- */}
+      <nav className="tabbar" aria-label="Primary">
+        {nav.map(({ to, label, Icon, count }) => (
+          <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `tab ${isActive ? 'is-active' : ''}`}>
+            <span className="tab-icon">
+              <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+              {count > 0 && <span className="tab-dot" aria-hidden="true" />}
+            </span>
+            <span className="tab-label">{label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

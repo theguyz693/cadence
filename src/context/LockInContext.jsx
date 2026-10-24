@@ -200,7 +200,7 @@ export function LockInProvider({ children }) {
 
     const breakSession = {
       id: now.toString(36),
-      taskTitle: `Break Time (${activeSession?.taskTitle || 'Focus'})`,
+      taskTitle: activeSession?.taskTitle || "Focus",
       durationSec,
       breakMinutes: breakMins,
       startTime: now,

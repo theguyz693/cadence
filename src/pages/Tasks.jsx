@@ -1,202 +1,168 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ArrowUpDown, CheckSquare, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { useLockIn } from '../context/LockInContext.jsx';
-import Modal from '../components/Modal.jsx';
-import { getDaysRemaining, formatTimeRemaining } from '../utils/helpers.js';
-import { CheckSquare, Plus, Lock, Clock, Edit3, Trash2 } from 'lucide-react';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import { PageHeader, Segmented, EmptyState } from '../components/ui/primitives.jsx';
+import Menu from '../components/ui/Menu.jsx';
+import TaskRow from '../components/TaskRow.jsx';
+import SmartAdd from '../components/SmartAdd.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
+import { getTaskDue } from '../utils/dates.js';
+
+const PRIORITY_RANK = { high: 0, medium: 1, low: 2, none: 3 };
+
+const SORTS = {
+  smart: 'Smart',
+  due: 'Due date',
+  priority: 'Priority',
+  newest: 'Newest first',
+};
+
+function compare(sort) {
+  const dueOf = (t) => getTaskDue(t)?.diff ?? Infinity;
+  const pr = (t) => PRIORITY_RANK[t.priority] ?? 3;
+  const created = (t) => new Date(t.createdAt).getTime() || 0;
+  switch (sort) {
+    case 'due': return (a, b) => dueOf(a) - dueOf(b) || pr(a) - pr(b);
+    case 'priority': return (a, b) => pr(a) - pr(b) || dueOf(a) - dueOf(b);
+    case 'newest': return (a, b) => created(b) - created(a);
+    default: return (a, b) => pr(a) - pr(b) || dueOf(a) - dueOf(b) || created(a) - created(b);
+  }
+}
+
+/** Group open tasks by when they're due (smart view only). */
+function groupTasks(tasks) {
+  const groups = { overdue: [], today: [], upcoming: [], later: [] };
+  tasks.forEach(t => {
+    const due = getTaskDue(t);
+    if (!due) groups.later.push(t);
+    else if (due.diff < 0) groups.overdue.push(t);
+    else if (due.diff === 0) groups.today.push(t);
+    else groups.upcoming.push(t);
+  });
+  return [
+    { key: 'overdue', label: 'Overdue', tasks: groups.overdue },
+    { key: 'today', label: 'Today', tasks: groups.today },
+    { key: 'upcoming', label: 'Upcoming', tasks: groups.upcoming },
+    { key: 'later', label: 'No date', tasks: groups.later },
+  ].filter(g => g.tasks.length);
+}
 
 export default function Tasks() {
-  const { state, addTask, toggleTask, deleteTask, editTask } = useApp();
+  const { state, toggleTask, editTask, deleteTask, restoreTask } = useApp();
+  const { toast } = useToast();
   const { openLockIn } = useLockIn();
-  const [showModal, setShowModal] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [filter, setFilter] = useState('pending'); // pending | completed | all
-  const [flashId, setFlashId] = useState(null);
+  const { openTaskEditor, deleteTaskWithUndo, askConfirm } = useWorkspace();
+  const [filter, setFilter] = useState('open');
+  const [sort, setSort] = useState('smart');
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [dueWithinDays, setDueWithinDays] = useState('');
+  const open = state.tasks.filter(t => !t.completed);
+  const done = state.tasks.filter(t => t.completed);
 
-  const filteredTasks = state.tasks.filter(t => {
-    if (filter === 'pending') return !t.completed;
-    if (filter === 'completed') return t.completed;
-    return true;
+  const list = useMemo(() => {
+    const base = filter === 'open' ? open : filter === 'done' ? done : state.tasks;
+    if (filter === 'done') {
+      return [...base].sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+    }
+    return [...base].sort((a, b) => Number(a.completed) - Number(b.completed) || compare(sort)(a, b));
+  }, [state.tasks, filter, sort]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const row = (task) => (
+    <TaskRow
+      key={task.id}
+      task={task}
+      onToggle={() => toggleTask(task.id)}
+      onEdit={() => openTaskEditor(task)}
+      onDelete={() => deleteTaskWithUndo(task)}
+      onFocus={() => openLockIn(task.title)}
+      onPriority={(p) => editTask(task.id, { priority: p })}
+    />
+  );
+
+  const clearCompleted = () => askConfirm({
+    title: `Delete ${done.length} completed ${done.length === 1 ? 'task' : 'tasks'}?`,
+    message: 'They will be removed from your list. You can undo right after.',
+    confirmLabel: 'Delete completed',
+    onConfirm: () => {
+      const removed = [...done];
+      removed.forEach(t => deleteTask(t.id));
+      toast({
+        title: `Deleted ${removed.length} completed ${removed.length === 1 ? 'task' : 'tasks'}`,
+        action: { label: 'Undo', onClick: () => removed.forEach(t => restoreTask(t)) },
+      });
+    },
   });
 
-  const openCreate = () => {
-    setEditingTask(null);
-    setTitle('');
-    setDescription('');
-    setDueWithinDays('');
-    setShowModal(true);
-  };
-
-  const openEdit = (task) => {
-    setEditingTask(task);
-    setTitle(task.title);
-    setDescription(task.description || '');
-    setDueWithinDays(task.dueWithinDays || '');
-    setShowModal(true);
-  };
-
-  const handleSave = () => {
-    if (!title.trim()) return;
-
-    if (editingTask) {
-      editTask(editingTask.id, {
-        title: title.trim(),
-        description: description.trim(),
-        dueWithinDays: dueWithinDays ? Number(dueWithinDays) : null,
-      });
-    } else {
-      addTask({
-        title: title.trim(),
-        description: description.trim(),
-        dueWithinDays: dueWithinDays ? Number(dueWithinDays) : null,
-      });
-    }
-    setShowModal(false);
-  };
-
-  const handleToggle = (id) => {
-    toggleTask(id);
-    setFlashId(id);
-    setTimeout(() => setFlashId(null), 400);
-  };
+  const grouped = filter === 'open' && sort === 'smart';
 
   return (
-    <div className="centered-page-container">
-      <div className="page-header">
-        <h2>Tasks</h2>
-        <p>Simple one-off tasks to keep track of</p>
-      </div>
-
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-xl)', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
-        <div className="filter-tabs">
-          {['pending', 'completed', 'all'].map(f => (
-            <button
-              key={f}
-              className={`filter-tab ${filter === f ? 'active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-        <button className="btn btn-primary" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus size={15} strokeWidth={2} /> New Task
-        </button>
-      </div>
-
-      {/* Task list */}
-      {filteredTasks.length === 0 ? (
-        <div className="empty-state">
-          <CheckSquare size={40} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }} />
-          <h3>{filter === 'completed' ? 'No completed tasks yet' : filter === 'pending' ? 'No pending tasks' : 'No tasks yet'}</h3>
-          <p>Create your first task to get started.</p>
-          <button className="btn btn-primary" onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Plus size={15} strokeWidth={2} /> New Task
+    <div className="page page-narrow">
+      <PageHeader
+        title="Tasks"
+        description="One-off things to get done. Routines live separately so your list stays short."
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => openTaskEditor()}>
+            <Plus size={15} strokeWidth={2} aria-hidden="true" /> New task
           </button>
-        </div>
-      ) : (
-        <div className="card-list">
-          {filteredTasks.map(task => (
-            <div
-              key={task.id}
-              className={`task-row ${flashId === task.id ? 'completion-flash' : ''}`}
-            >
-              <div
-                className={`checklist-checkbox ${task.completed ? 'checked' : ''}`}
-                onClick={() => handleToggle(task.id)}
-              />
-              <div className="task-row-content">
-                <div className={`task-row-title ${task.completed ? 'completed' : ''}`}>
-                  {task.title}
-                </div>
-                {task.description && (
-                  <div className="task-row-desc">{task.description}</div>
-                )}
-              </div>
-              <div className="task-row-meta">
-                {task.dueWithinDays && !task.completed && (
-                  <span className={`time-remaining ${getDaysRemaining(task.createdAt, task.dueWithinDays) <= 1 ? 'urgent' : getDaysRemaining(task.createdAt, task.dueWithinDays) <= 3 ? 'warning' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)' }}>
-                    <Clock size={12} strokeWidth={1.75} /> {formatTimeRemaining(getDaysRemaining(task.createdAt, task.dueWithinDays))}
-                  </span>
-                )}
-              </div>
-              <div className="task-row-actions">
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => openLockIn(task.title)}
-                  title="Start Lock In session for this task"
-                  style={{ color: 'var(--accent-secondary)', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <Lock size={12} strokeWidth={1.75} /> Lock In
-                </button>
-                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(task)} title="Edit">
-                  <Edit3 size={13} strokeWidth={1.75} />
-                </button>
-                <button className="btn btn-ghost btn-icon btn-danger" onClick={() => deleteTask(task.id)} title="Delete">
-                  <Trash2 size={13} strokeWidth={1.75} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingTask ? 'Edit Task' : 'New Task'}
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={!title.trim()}>
-              {editingTask ? 'Save Changes' : 'Create Task'}
-            </button>
-          </>
         }
-      >
-        <div className="form-group">
-          <label className="form-label">Title</label>
-          <input
-            className="form-input"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="What needs to be done?"
-            autoFocus
-            onKeyDown={e => e.key === 'Enter' && handleSave()}
-          />
-        </div>
+      />
 
-        <div className="form-group">
-          <label className="form-label">Description (optional)</label>
-          <textarea
-            className="form-input"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Add some details..."
-            rows={3}
-          />
+      <div className="toolbar">
+        <Segmented
+          label="Filter tasks"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'open', label: 'Open', count: open.length },
+            { value: 'done', label: 'Completed', count: done.length },
+            { value: 'all', label: 'All' },
+          ]}
+        />
+        <div className="toolbar-end">
+          {filter === 'done' && done.length > 0 && (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={clearCompleted}>Clear completed</button>
+          )}
+          {filter !== 'done' && (
+            <Menu
+              label="Sort tasks"
+              items={Object.entries(SORTS).map(([key, label]) => ({ label, checked: sort === key, onSelect: () => setSort(key) }))}
+              trigger={(props) => (
+                <button {...props} className="btn btn-ghost btn-sm">
+                  <ArrowUpDown size={14} strokeWidth={1.75} aria-hidden="true" /> {SORTS[sort]}
+                </button>
+              )}
+            />
+          )}
         </div>
+      </div>
 
-        <div className="form-group">
-          <label className="form-label">Due within (days, optional)</label>
-          <input
-            className="form-input"
-            type="number"
-            min={1}
-            max={365}
-            value={dueWithinDays}
-            onChange={e => setDueWithinDays(e.target.value)}
-            placeholder="e.g. 3"
+      <section className="panel">
+        {filter !== 'done' && (
+          <SmartAdd id="tasks-quick-add" bordered placeholder="Add a task — try “pay rent friday !high”" />
+        )}
+
+        {list.length === 0 ? (
+          <EmptyState
+            icon={CheckSquare}
+            title={filter === 'done' ? 'Nothing completed yet' : state.tasks.length ? 'All caught up' : 'No tasks yet'}
+            description={filter === 'done'
+              ? 'Tasks you check off will show up here.'
+              : state.tasks.length ? 'Every open task is done. Enjoy the quiet.' : 'Capture anything that needs doing once — type above and press Enter.'}
           />
-        </div>
-      </Modal>
+        ) : grouped ? (
+          groupTasks(list).map(group => (
+            <div key={group.key} className="task-group">
+              <h2 className={`task-group-label group-${group.key}`}>
+                {group.label} <span className="t-num">{group.tasks.length}</span>
+              </h2>
+              <ul className="item-list">{group.tasks.map(row)}</ul>
+            </div>
+          ))
+        ) : (
+          <ul className="item-list">{list.map(row)}</ul>
+        )}
+      </section>
     </div>
   );
 }
