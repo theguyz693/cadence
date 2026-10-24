@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLockIn } from '../context/LockInContext.jsx';
 import { formatTimerDisplay } from '../utils/lockInStorage.js';
 import {
-  Lock,
   Play,
   Pause,
   Square,
@@ -67,12 +66,16 @@ export default function LockInScreen() {
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
+      document.documentElement.requestFullscreen?.().catch(() => {});
     } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
+      document.exitFullscreen?.().catch(() => {});
     }
+  }, []);
+
+  useEffect(() => {
+    const sync = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
   }, []);
 
   if (!activeSession) return null;
@@ -85,211 +88,139 @@ export default function LockInScreen() {
   const durationSec = activeSession.durationSec || 1;
   const progressRatio = Math.max(0, Math.min(1, remainingSec / durationSec));
 
-  // SVG Circular progress ring calculations
-  const strokeWidth = 8;
   const radius = 140;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progressRatio);
-
   const durationMinutesLabel = Math.round(durationSec / 60);
 
-  return (
-    <div className={`lock-in-overlay ${isBreak ? 'break-mode' : ''} ${isCompleted ? 'completed-mode' : ''}`}>
-      {/* Background ambient glow animation */}
-      <div className="lock-in-ambient-glow" />
-      <div className="lock-in-noise-overlay" />
+  const statusText = isCompleted ? (isBreak ? 'Break over' : 'Session complete') : isBreak ? 'On a break' : isPaused ? 'Paused' : 'Locked in';
 
-      {/* Top Header Bar */}
-      <div className="lock-in-header-bar">
-        <div className="lock-in-brand">
-          <span className="lock-in-logo-icon" style={{ display: 'flex', alignItems: 'center', color: 'var(--accent-primary)' }}>
-            <Logo size={18} />
-          </span>
-          <span className="lock-in-brand-text">CADENCE LOCK IN</span>
+  return (
+    <div
+      className={`focus-mode ${isBreak ? 'is-break' : ''} ${isCompleted ? 'is-complete' : ''} ${isPaused ? 'is-paused' : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Focus session: ${activeSession.taskTitle}`}
+    >
+      <div className="focus-top">
+        <div className="focus-brand">
+          <Logo size={16} />
+          <span>Cadence</span>
         </div>
-        <div className="lock-in-top-actions">
-          <button
-            className="btn btn-ghost btn-sm lock-in-header-btn"
-            onClick={toggleFullscreen}
-            title="Toggle Fullscreen (F)"
-            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-          >
-            {isFullscreen ? <Minimize2 size={13} strokeWidth={1.75} /> : <Maximize2 size={13} strokeWidth={1.75} />}
-            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+        <div className="row gap-1">
+          <button type="button" className="focus-ghost-btn" onClick={toggleFullscreen} aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}>
+            {isFullscreen ? <Minimize2 size={15} strokeWidth={1.75} /> : <Maximize2 size={15} strokeWidth={1.75} />}
+            <span className="focus-btn-text">{isFullscreen ? 'Exit full screen' : 'Full screen'}</span>
           </button>
           <button
-            className="btn btn-ghost btn-sm lock-in-header-btn"
-            onClick={() => {
-              if (isCompleted) {
-                endSession();
-              } else {
-                setShowConfirmExit(true);
-              }
-            }}
-            title="Close Focus Mode (Esc)"
-            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+            type="button"
+            className="focus-ghost-btn"
+            onClick={() => (isCompleted ? endSession() : setShowConfirmExit(true))}
+            aria-label="Leave focus mode"
           >
-            <X size={13} strokeWidth={1.75} /> Exit
+            <X size={15} strokeWidth={1.75} />
+            <span className="focus-btn-text">Leave</span>
           </button>
         </div>
       </div>
 
-      {/* Main Container */}
-      <div className="lock-in-center-container">
-        
-        {/* State Badge */}
-        <div className="lock-in-status-pill">
-          <span className={`status-dot ${isRunning ? 'pulsing' : isPaused ? 'paused' : 'done'}`} />
-          <span>
-            {isCompleted
-              ? 'SESSION COMPLETE'
-              : isBreak
-              ? 'REST & RECHARGE'
-              : isPaused
-              ? 'PAUSED'
-              : 'LOCKED IN'}
-          </span>
+      <div className="focus-center">
+        <div className="focus-status" aria-live="polite">
+          <span className={`focus-status-dot ${isRunning ? 'is-running' : ''}`} aria-hidden="true" />
+          {statusText}
         </div>
 
-        {/* Task Title */}
-        <h2 className="lock-in-task-title">
-          {activeSession.taskTitle}
-        </h2>
+        <h2 className="focus-title">{activeSession.taskTitle}</h2>
 
-        {/* ============ CIRCULAR TIMER RING ============ */}
-        <div className="lock-in-timer-wrapper">
-          <svg className="lock-in-timer-svg" viewBox="0 0 320 320">
-            {/* Background Track */}
+        <div className="focus-timer">
+          <svg viewBox="0 0 320 320" aria-hidden="true">
+            <circle className="focus-ring-track" cx="160" cy="160" r={radius} strokeWidth="3" fill="none" />
             <circle
-              className="lock-in-timer-bg-track"
+              className="focus-ring-fill"
               cx="160"
               cy="160"
               r={radius}
-              strokeWidth={strokeWidth}
-            />
-            {/* Active Progress Fill */}
-            <circle
-              className="lock-in-timer-fill"
-              cx="160"
-              cy="160"
-              r={radius}
-              strokeWidth={strokeWidth}
+              strokeWidth="3"
+              fill="none"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
+              transform="rotate(-90 160 160)"
             />
           </svg>
-
-          {/* Time Display */}
-          <div className="lock-in-timer-content">
-            <div className="lock-in-countdown-text">
+          <div className="focus-time">
+            <div className="focus-countdown t-num" role="timer" aria-label={`${Math.floor(remainingSec / 60)} minutes ${remainingSec % 60} seconds remaining`}>
               {formatTimerDisplay(remainingSec)}
             </div>
             {!isCompleted && (
-              <div className="lock-in-session-meta">
-                {isBreak ? 'Break Time' : `Session ${activeSession.sessionNumber || 1} · ${durationMinutesLabel}m`}
+              <div className="focus-meta t-num">
+                {isBreak ? `${durationMinutesLabel} min break` : `${durationMinutesLabel} min session`}
               </div>
             )}
           </div>
         </div>
 
-        {/* ============ CONTROLS & COMPLETION STATES ============ */}
         {isCompleted ? (
-          <div className="lock-in-completion-card">
-            <div className="completion-icon-pulse">
-              <Check size={32} strokeWidth={2.5} />
-            </div>
-            <h3 className="completion-heading">Great focus work!</h3>
-            <p className="completion-subtext">
-              You completed {durationMinutesLabel} minutes on <strong>{activeSession.taskTitle}</strong>.
+          <div className="focus-complete">
+            <div className="focus-complete-icon" aria-hidden="true"><Check size={22} strokeWidth={2.5} /></div>
+            <p className="focus-complete-text">
+              {isBreak
+                ? 'Ready for the next one?'
+                : <>You focused for <strong>{durationMinutesLabel} {durationMinutesLabel === 1 ? 'minute' : 'minutes'}</strong> on {activeSession.taskTitle}.</>}
             </p>
-
-            <div className="completion-action-buttons">
+            <div className="focus-actions">
               {!isBreak && activeSession.breakMinutes > 0 && (
-                <button
-                  className="btn btn-primary lock-in-action-btn"
-                  onClick={() => startBreak(activeSession.breakMinutes)}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                >
-                  <Coffee size={16} strokeWidth={1.75} /> Take {activeSession.breakMinutes} Min Break
+                <button type="button" className="focus-btn focus-btn-primary" onClick={() => startBreak(activeSession.breakMinutes)}>
+                  <Coffee size={16} strokeWidth={1.75} /> Take a {activeSession.breakMinutes} min break
                 </button>
               )}
-
               <button
-                className="btn btn-secondary lock-in-action-btn"
-                onClick={() => {
-                  const currentTitle = activeSession.taskTitle;
-                  endSession();
-                  openLockIn(currentTitle);
-                }}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                type="button"
+                className="focus-btn"
+                onClick={() => { const t = activeSession.taskTitle; endSession(); openLockIn(t); }}
               >
-                <RotateCcw size={16} strokeWidth={1.75} /> Start Another Session
+                <RotateCcw size={16} strokeWidth={1.75} /> Another session
               </button>
-
-              <button
-                className="btn btn-ghost lock-in-action-btn"
-                onClick={endSession}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-              >
-                <ArrowLeft size={16} strokeWidth={1.75} /> Return to Cadence
+              <button type="button" className="focus-btn focus-btn-ghost" onClick={endSession}>
+                <ArrowLeft size={16} strokeWidth={1.75} /> Back to Cadence
               </button>
             </div>
           </div>
         ) : (
           <>
-            <div className="lock-in-controls-row">
+            <div className="focus-actions">
               {isRunning ? (
-                <button className="btn btn-secondary lock-in-ctrl-btn" onClick={pauseSession} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" className="focus-btn focus-btn-primary" onClick={pauseSession}>
                   <Pause size={16} strokeWidth={2} /> Pause
                 </button>
               ) : (
-                <button className="btn btn-primary lock-in-ctrl-btn" onClick={resumeSession} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" className="focus-btn focus-btn-primary" onClick={resumeSession}>
                   <Play size={16} strokeWidth={2} /> Resume
                 </button>
               )}
-
-              <button
-                className="btn btn-ghost lock-in-ctrl-btn"
-                onClick={() => setShowConfirmExit(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Square size={14} strokeWidth={2} /> End Session
+              <button type="button" className="focus-btn focus-btn-ghost" onClick={() => setShowConfirmExit(true)}>
+                <Square size={13} strokeWidth={2} /> End
               </button>
             </div>
-
-            {/* Lock In Mode Optional Music Player */}
             <LockInMusicPlayer />
           </>
         )}
 
-        {/* Keyboard shortcut legend */}
-        <div className="lock-in-keyboard-hints">
-          <span><kbd>Space</kbd> Pause/Resume</span>
-          <span><kbd>Esc</kbd> Exit</span>
-          <span><kbd>F</kbd> Fullscreen</span>
+        <div className="focus-hints" aria-hidden="true">
+          <span><kbd>Space</kbd> pause</span>
+          <span><kbd>F</kbd> full screen</span>
+          <span><kbd>Esc</kbd> leave</span>
         </div>
       </div>
 
-      {/* Confirmation Exit Modal */}
       {showConfirmExit && (
-        <div className="lock-in-modal-overlay" onClick={() => setShowConfirmExit(false)}>
-          <div className="lock-in-confirm-box" onClick={e => e.stopPropagation()}>
-            <h3>End Focus Session?</h3>
-            <p>Ending early will stop the countdown. Are you sure?</p>
-            <div className="lock-in-confirm-actions">
-              <button className="btn btn-secondary" onClick={() => setShowConfirmExit(false)}>
-                Keep Focusing
-              </button>
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  setShowConfirmExit(false);
-                  endSession();
-                }}
-              >
-                Yes, End Session
-              </button>
+        <div className="focus-confirm-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowConfirmExit(false); }}>
+          <div className="focus-confirm" role="alertdialog" aria-modal="true" aria-labelledby="focus-confirm-title" aria-describedby="focus-confirm-desc">
+            <h3 id="focus-confirm-title">End this session early?</h3>
+            <p id="focus-confirm-desc">The timer stops and this session won't be logged.</p>
+            <div className="focus-confirm-actions">
+              <button type="button" className="focus-btn" onClick={() => setShowConfirmExit(false)} autoFocus>Keep going</button>
+              <button type="button" className="focus-btn focus-btn-danger" onClick={() => { setShowConfirmExit(false); endSession(); }}>End session</button>
             </div>
           </div>
         </div>

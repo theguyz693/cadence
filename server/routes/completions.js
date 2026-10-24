@@ -21,7 +21,7 @@ router.put('/', async (req, res) => {
     await Completion.findOneAndUpdate(
       { userId: req.userId },
       { $set: { userId: req.userId, data } },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
     res.json({ success: true });
   } catch (err) {

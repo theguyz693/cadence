@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { loginApi, signupApi, logoutApi, fetchMeApi, getToken, setToken } from '../utils/api.js';
+import { enterDemoMode, exitDemoMode, isDemoMode } from '../demo/demoApi.js';
 
 const AuthContext = createContext(null);
 
@@ -51,15 +52,26 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore network failure on logout
     } finally {
+      if (isDemoMode()) exitDemoMode();
       setToken(null);
       setUser(null);
     }
+  }, []);
+
+  /** Explore Cadence with a sample workspace stored only in this browser. */
+  const startDemo = useCallback(() => {
+    const demoUser = enterDemoMode();
+    setToken('demo');
+    setUser(demoUser);
+    return demoUser;
   }, []);
 
   const value = {
     user,
     loading,
     isAuthenticated: !!user,
+    isDemo: !!user?.demo,
+    startDemo,
     login,
     signup,
     logout,

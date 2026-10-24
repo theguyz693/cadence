@@ -6,6 +6,10 @@ const taskSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, default: '' },
   dueWithinDays: { type: Number, default: null },
+  priority: { type: String, enum: ['none', 'low', 'medium', 'high'], default: 'none' },
+  completedAt: { type: String, default: null },
+  time: { type: String, default: null },        // 'HH:MM' start, optional
+  duration: { type: Number, default: null },    // minutes, optional
   completed: { type: Boolean, default: false },
   createdAt: { type: String },
 }, { timestamps: false });

@@ -1,0 +1,375 @@
+/* ==========================================================================
+   Public landing page — built on the app's design tokens so the marketing
+   site and the product feel like one thing. Follows the visitor's theme.
+   ========================================================================== */
+
+.landing {
+  min-height: 100vh;
+  background: var(--bg-app);
+  color: var(--text);
+  overflow-x: clip;
+}
+
+/* ---- Nav ---- */
+.landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 60px;
+  padding: 0 max(20px, calc((100vw - 1160px) / 2));
+  background: color-mix(in srgb, var(--bg-app) 85%, transparent);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid transparent;
+}
+.landing-links { display: flex; gap: 4px; margin-right: auto; }
+.landing-links a {
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+.landing-links a:hover { color: var(--text); background: var(--surface-hover); }
+.landing-nav-actions { display: flex; gap: 6px; }
+@media (max-width: 720px) {
+  .landing-links { display: none; }
+  .landing-nav-actions { margin-left: auto; }
+}
+
+/* ---- Reveal ---- */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out); }
+.reveal.is-shown { opacity: 1; transform: none; }
+.reveal-now { animation: rise-in 700ms var(--ease-out) both; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+
+/* ---- Hero ---- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 56px;
+  align-items: center;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 72px 20px 88px;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+.hero-title {
+  margin-top: 20px;
+  font-size: clamp(2.4rem, 5.4vw, 3.9rem);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+.hero-sub {
+  margin-top: 20px;
+  max-width: 500px;
+  font-size: clamp(1rem, 1.4vw, 1.125rem);
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.hero-ctas-center { justify-content: center; }
+.hero-note { margin-top: 12px; }
+@media (max-width: 960px) {
+  .hero { grid-template-columns: 1fr; gap: 40px; padding: 40px 20px 64px; }
+}
+@media (max-width: 480px) {
+  .hero-ctas .btn { width: 100%; }
+}
+
+/* ---- Sequencer playground ---- */
+.playground {
+  position: relative;
+  padding: 22px 22px 18px;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+.playground::before {
+  /* quiet accent glow behind the card */
+  content: '';
+  position: absolute;
+  inset: -40px -30px;
+  z-index: -1;
+  background: radial-gradient(60% 60% at 60% 40%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.playground-head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.playground-head .routine-icon { background: var(--accent-soft); color: var(--accent-text); }
+.playground-title { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.playground-track { --step: 50px; gap: 4px 8px; }
+.playground-track.is-long { --step: 40px; gap: 4px 6px; }
+.playground .sequence-track::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--step) / 2);
+  right: calc(var(--step) / 2);
+  top: calc(18px + var(--step) / 2);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent) 0 var(--track-progress), var(--divider) var(--track-progress) 100%);
+  opacity: 0.35;
+  transition: background 140ms linear;
+}
+.playground .sequence-step { transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out), transform 180ms var(--ease-spring); }
+.playground .sequence-day.is-done .sequence-step { animation: check-pop 260ms var(--ease-spring); }
+.playground-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--divider);
+}
+.playground-foot strong { color: var(--text); }
+.playground-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.playground-presets .chip { height: 26px; font-size: var(--text-xs); }
+@media (max-width: 520px) {
+  .playground { padding: 18px 16px 14px; }
+  .playground-track, .playground-track.is-long { --step: 30px; gap: 4px 5px; }
+  .playground .sequence-track::before { display: none; }
+  .playground-head { flex-wrap: wrap; }
+  .playground-head .today-toggle { width: 100%; justify-content: center; }
+  .playground-hint { display: none; }
+}
+
+/* ---- Sections ---- */
+.landing-section { max-width: 1160px; margin: 0 auto; padding: 72px 20px; }
+.section-head { text-align: center; max-width: 620px; margin: 0 auto 40px; }
+.section-title {
+  font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.section-sub { margin-top: 14px; font-size: var(--text-md); line-height: 1.6; color: var(--text-secondary); }
+
+/* ---- Product preview ---- */
+.preview-section { padding-top: 24px; }
+.preview {
+  max-width: 980px;
+  margin: 0 auto;
+  border-radius: var(--radius-xl);
+  background: var(--bg-app);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+.preview-chrome { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.preview-chrome i { width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong); }
+.preview-body { display: grid; grid-template-columns: 190px minmax(0, 1fr); min-height: 420px; }
+.preview-side { display: flex; flex-direction: column; gap: 2px; padding: 16px 10px; border-right: 1px solid var(--border); }
+.preview-side .brand { padding: 0 8px 14px; }
+.preview-nav {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 30px;
+  padding: 0 9px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+.preview-nav svg { color: var(--text-tertiary); }
+.preview-nav .nav-count { margin-left: auto; }
+.preview-nav.is-active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+.preview-nav.is-active svg { color: var(--accent); }
+.preview-lock {
+  display: flex; align-items: center; gap: 9px;
+  height: 30px; margin-top: 12px; padding: 0 9px;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft); color: var(--accent-text);
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+}
+.preview-main { padding: 22px 26px 26px; min-width: 0; }
+.preview-h1 { font-size: var(--text-xl); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-display); margin-bottom: 16px; }
+.preview .summary { padding: 12px 16px; }
+.preview .up-next { margin-bottom: 12px; padding: 12px 14px; }
+.preview .item-row { min-height: 44px; }
+.preview .item-row .sequence-compact { margin-left: auto; }
+.preview-ring { flex-shrink: 0; }
+@media (max-width: 760px) {
+  .preview-body { grid-template-columns: 1fr; }
+  .preview-side { display: none; }
+  .preview-main { padding: 18px 16px; }
+  .preview .summary-stats { display: none; }
+  .preview .item-row .sequence-compact { display: none; }
+}
+
+/* ---- Steps ---- */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.step {
+  position: relative;
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.step-num { position: absolute; top: 20px; right: 22px; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-tertiary); }
+.step-icon, .feature-icon {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  margin-bottom: 16px;
+}
+.step-title, .feature-title { font-size: var(--text-md); font-weight: var(--weight-semibold); letter-spacing: -0.01em; }
+.step-text, .feature-text { margin-top: 6px; font-size: var(--text-sm); line-height: 1.6; color: var(--text-secondary); }
+@media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
+
+/* ---- Lock In band (always dark, like focus mode) ---- */
+.lockin-band {
+  margin: 40px 0;
+  padding: 88px 20px;
+  background: #0d0d0e;
+  color: #ecebe8;
+  --logo-cutout: #0d0d0e;
+}
+.lockin-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 56px;
+  align-items: center;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+[data-theme="dark"] .lockin-band { background: #09090a; border-block: 1px solid rgba(255, 255, 255, 0.06); }
+.lockin-eyebrow { font-size: var(--text-xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: var(--tracking-caps); color: #93abff; margin-bottom: 14px; }
+.lockin-band .section-title { color: #fff; }
+.lockin-band .section-sub { color: rgba(236, 235, 232, 0.65); }
+.lockin-list { display: flex; flex-direction: column; gap: 12px; margin-top: 26px; }
+.lockin-list li { display: flex; align-items: center; gap: 10px; font-size: var(--text-base); color: rgba(236, 235, 232, 0.85); }
+.lockin-list svg { color: #93abff; }
+.film {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.9);
+  background: #000;
+  aspect-ratio: 848 / 478;
+}
+.film-video { width: 100%; height: 100%; object-fit: cover; }
+.film-timer {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 78px; height: 78px;
+  display: grid;
+  place-items: center;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: #fff;
+  background: rgba(13, 13, 14, 0.6);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+}
+.film-timer svg { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); }
+.film-ring-track { stroke: rgba(255, 255, 255, 0.12); }
+.film-ring-fill { stroke: #93abff; stroke-dashoffset: 339.3; animation: film-ring 8s linear infinite; }
+@keyframes film-ring { to { stroke-dashoffset: 0; } }
+@media (max-width: 860px) {
+  .lockin-band { padding: 64px 20px; }
+  .lockin-inner { grid-template-columns: 1fr; gap: 36px; }
+}
+
+/* ---- Features ---- */
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.feature { padding: 24px; border-radius: var(--radius-xl); background: var(--surface); border: 1px solid var(--border); }
+@media (max-width: 900px) { .features { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 580px) { .features { grid-template-columns: 1fr; } }
+
+/* ---- CTA + footer ---- */
+.landing-cta { max-width: 760px; margin: 0 auto; padding: 72px 20px 96px; text-align: center; }
+.cta-title { font-size: clamp(2rem, 4.4vw, 3rem); font-weight: 650; letter-spacing: -0.035em; line-height: 1.05; }
+.landing-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 24px 20px 32px;
+  border-top: 1px solid var(--divider);
+}
+.landing-footer .brand { margin-right: auto; }
+.landing-footer-links { display: flex; gap: 16px; font-size: var(--text-sm); color: var(--text-secondary); }
+.landing-footer-links a:hover { color: var(--text); }
+@media (max-width: 520px) { .landing-footer { flex-wrap: wrap; } }
+
+/* ========================================
+   CADENCE — Video Intro Overlay
+   Fullscreen video reveal sequence
+   ======================================== */
+
+/* App content rendered behind the overlay */
+.cadence-intro-app-behind {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  overflow: auto;
+}
+
+.cadence-intro-app-behind > * {
+  pointer-events: none;
+}
+
+/* Fullscreen video overlay */
+.cadence-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  cursor: pointer;
+  user-select: none;
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+.cadence-intro-overlay.cadence-intro-fadeout {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The video element */
+.cadence-intro-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Reduce motion: skip intro entirely (handled in JS, this is a fallback) */
+@media (prefers-reduced-motion: reduce) {
+  .cadence-intro-overlay {
+    display: none !important;
+  }
+}

@@ -1,234 +1,452 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowRight, Check, Repeat, CheckSquare, Target, Sun, Lock, Timer, Command, MoonStar,
+  Smartphone, History, ShieldCheck, Coffee, Music, Keyboard, Sparkles,
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext.jsx';
 import Logo from '../components/Logo.jsx';
 
-function FadeInSection({ children }) {
-  const [isIntersecting, setIsIntersecting] = useState(false);
-  const domRef = useRef();
-
+/* --------------------------------------------------------------------------
+   Reveal-on-scroll wrapper
+   -------------------------------------------------------------------------- */
+function Reveal({ children, className = '', as: Tag = 'div', delay = 0, immediate = false }) {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(false);
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setIsIntersecting(true);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    if (domRef.current) {
-      observer.observe(domRef.current);
-    }
-    return () => observer.disconnect();
+    if (immediate) return undefined;
+    const el = ref.current;
+    if (!el || !('IntersectionObserver' in window)) { setShown(true); return undefined; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setShown(true); io.disconnect(); } }, { threshold: 0.15 });
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
-
   return (
-    <div
-      ref={domRef}
-      className={`landing-scroll-section ${isIntersecting ? 'is-visible' : ''}`}
+    <Tag
+      ref={ref}
+      className={`${immediate ? 'reveal-now' : `reveal ${shown ? 'is-shown' : ''}`} ${className}`}
+      style={immediate ? { animationDelay: `${delay}ms` } : { transitionDelay: `${delay}ms` }}
     >
       {children}
+    </Tag>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Sequencer playground — the hero. A real, clickable version of the
+   routine sequencer so visitors "get" Cadence in a few seconds.
+   -------------------------------------------------------------------------- */
+const PRESETS = {
+  ppl: { label: 'Push / Pull / Legs', name: 'Strength training', days: ['Push', 'Pull', 'Legs', null, 'Upper', 'Lower', null], today: 4, missed: [2] },
+  three: { label: '3× a week', name: 'Morning run', days: ['Run', null, 'Run', null, 'Run', null, null], today: 4, missed: [] },
+  block: { label: '10-day block', name: '10K training block', days: ['Easy', null, 'Intervals', null, 'Tempo', null, null, 'Easy', null, 'Long run'], today: 7, missed: [] },
+  daily: { label: 'Every day', name: 'Read 20 pages', days: ['', '', '', '', '', '', ''], today: 5, missed: [3] },
+};
+
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+function SequencerPlayground() {
+  const [presetKey, setPresetKey] = useState('ppl');
+  const preset = PRESETS[presetKey];
+  const [done, setDone] = useState(() => new Set());
+  const [revealed, setRevealed] = useState(0); // how many past days have "played in"
+
+  // Play the cycle in: past scheduled days fill one by one up to today.
+  useEffect(() => {
+    const initial = new Set(preset.days.map((d, i) => (d !== null && i < preset.today && !preset.missed.includes(i) ? i : -1)).filter(i => i >= 0));
+    setDone(initial);
+    if (prefersReducedMotion()) { setRevealed(preset.today); return undefined; }
+    setRevealed(0);
+    let i = 0;
+    const t = setInterval(() => {
+      i += 1;
+      setRevealed(i);
+      if (i >= preset.today) clearInterval(t);
+    }, 140);
+    return () => clearInterval(t);
+  }, [presetKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggle = (i) => setDone(s => {
+    const next = new Set(s);
+    if (next.has(i)) next.delete(i); else next.add(i);
+    return next;
+  });
+
+  const scheduledSoFar = preset.days.filter((d, i) => d !== null && i <= preset.today).length;
+  const doneSoFar = [...done].filter(i => i <= preset.today).length;
+  const todayLabel = preset.days[preset.today];
+  const todayActive = todayLabel !== null;
+  const trackPct = preset.days.length > 1 ? (Math.min(revealed, preset.today) / (preset.days.length - 1)) * 100 : 0;
+
+  return (
+    <div className="playground" aria-label="Interactive routine sequencer demo">
+      <div className="playground-head">
+        <span className="routine-icon routine-icon-lg" aria-hidden="true"><Repeat size={18} strokeWidth={1.75} /></span>
+        <div className="grow">
+          <div className="playground-title">{preset.name}</div>
+          <div className="t-meta t-num">
+            {preset.days.length}-day cycle · Day {preset.today + 1} of {preset.days.length}
+          </div>
+        </div>
+        {todayActive && (
+          <button
+            type="button"
+            className={`today-toggle ${done.has(preset.today) ? 'is-done' : ''}`}
+            onClick={() => toggle(preset.today)}
+            aria-pressed={done.has(preset.today)}
+          >
+            <span className={`check ${done.has(preset.today) ? 'is-checked' : ''}`} aria-hidden="true">
+              <svg viewBox="0 0 16 16"><path d="M4 8.4 6.7 11 12 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </span>
+            <span>{done.has(preset.today) ? 'Done today' : `Today${todayLabel ? ` · ${todayLabel}` : ''}`}</span>
+          </button>
+        )}
+      </div>
+
+      <ol className={`sequence-track playground-track ${preset.days.length > 7 ? 'is-long' : ''}`} style={{ '--track-progress': `${trackPct}%` }}>
+        {preset.days.map((label, i) => {
+          const active = label !== null;
+          const isToday = i === preset.today;
+          const past = i < preset.today;
+          const visible = i < revealed || !past;
+          let status = 'rest';
+          if (active) {
+            if (done.has(i) && (visible || isToday)) status = 'done';
+            else if (isToday) status = 'today';
+            else if (past && visible) status = 'missed';
+            else if (past) status = 'upcoming';
+            else status = 'upcoming';
+          }
+          const clickable = active && (past || isToday);
+          const Inner = (
+            <>
+              <span className="sequence-num t-num" aria-hidden="true">{i + 1}</span>
+              <span className="sequence-step" aria-hidden="true">
+                {status === 'done' && <Check size={14} strokeWidth={2.5} />}
+              </span>
+              <span className="sequence-label" aria-hidden="true">{isToday ? 'Today' : label}</span>
+            </>
+          );
+          return (
+            <li key={`${presetKey}-${i}`} className={`sequence-day is-${status} ${isToday ? 'is-current' : ''}`}>
+              {clickable ? (
+                <button
+                  type="button"
+                  className="sequence-hit"
+                  onClick={() => toggle(i)}
+                  aria-pressed={done.has(i)}
+                  aria-label={`Day ${i + 1}${label ? `, ${label}` : ''}: ${done.has(i) ? 'done' : 'not done'}`}
+                >
+                  {Inner}
+                </button>
+              ) : (
+                <div className="sequence-hit" role="img" aria-label={`Day ${i + 1}: ${active ? 'scheduled' : 'rest day'}`}>{Inner}</div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="playground-foot">
+        <span className="t-meta t-num" aria-live="polite">
+          <strong>{doneSoFar}</strong> of {scheduledSoFar} scheduled days done this cycle
+        </span>
+        <span className="t-meta playground-hint">Tap a day to check it off</span>
+      </div>
+
+      <div className="playground-presets" role="radiogroup" aria-label="Try a pattern">
+        {Object.entries(PRESETS).map(([key, p]) => (
+          <button
+            key={key}
+            type="button"
+            role="radio"
+            aria-checked={presetKey === key}
+            className={`chip ${presetKey === key ? 'is-selected' : ''}`}
+            onClick={() => setPresetKey(key)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-export default function LandingPage() {
-  const navigate = useNavigate();
-  const videoRef = useRef(null);
+/* --------------------------------------------------------------------------
+   Product preview — a faithful, static rendering of the Today screen,
+   built from the app's own styles.
+   -------------------------------------------------------------------------- */
+function StaticCheck({ checked }) {
+  return (
+    <span className={`check ${checked ? 'is-checked' : ''}`} aria-hidden="true">
+      <svg viewBox="0 0 16 16"><path d="M4 8.4 6.7 11 12 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </span>
+  );
+}
 
-  // Autoplay video once, do not loop
+function MiniSeq({ states }) {
+  return (
+    <div className="sequence sequence-compact">
+      <ol className="sequence-track">
+        {states.map((s, i) => (
+          <li key={i} className={`sequence-day is-${s.replace('*', '')} ${s.includes('*') ? 'is-current' : ''}`}>
+            <div className="sequence-hit"><span className="sequence-step" /></div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function ProductPreview() {
+  return (
+    <div className="preview" role="img" aria-label="Preview of the Cadence Today screen: progress summary, the next action, today's routines and tasks.">
+      <div className="preview-chrome" aria-hidden="true"><i /><i /><i /></div>
+      <div className="preview-body" aria-hidden="true">
+        <aside className="preview-side">
+          <div className="brand"><Logo size={16} /><span className="brand-name">Cadence</span></div>
+          <div className="preview-nav is-active"><Sun size={14} /> Today <span className="nav-count">3</span></div>
+          <div className="preview-nav"><Repeat size={14} /> Routines</div>
+          <div className="preview-nav"><CheckSquare size={14} /> Tasks</div>
+          <div className="preview-nav"><Target size={14} /> Goals</div>
+          <div className="preview-lock"><Lock size={13} /> Lock in</div>
+        </aside>
+        <div className="preview-main">
+          <div className="page-eyebrow">Saturday, October 24</div>
+          <div className="preview-h1">Good morning, Alex</div>
+          <div className="summary">
+            <div className="summary-main">
+              <svg width="40" height="40" viewBox="0 0 40 40" className="preview-ring">
+                <circle cx="20" cy="20" r="17" strokeWidth="4" fill="none" className="ring-track" />
+                <circle cx="20" cy="20" r="17" strokeWidth="4" fill="none" className="ring-fill" strokeDasharray="106.8" strokeDashoffset="53.4" strokeLinecap="round" transform="rotate(-90 20 20)" />
+              </svg>
+              <div>
+                <div className="summary-headline">3 of 6 done today</div>
+                <div className="t-meta">Routines due today plus tasks due today.</div>
+              </div>
+            </div>
+            <dl className="summary-stats">
+              <div><dt>Routines</dt><dd>1<span>/3</span></dd></div>
+              <div><dt>Focus</dt><dd>1h 15m</dd></div>
+            </dl>
+          </div>
+          <div className="up-next">
+            <div className="up-next-label">Up next</div>
+            <div className="up-next-body">
+              <span className="routine-icon"><Repeat size={14} /></span>
+              <div className="grow"><div className="up-next-title">Strength training · Upper</div><div className="t-meta">Day 5 of 7</div></div>
+              <span className="btn btn-primary btn-sm"><Check size={13} /> Mark done</span>
+            </div>
+          </div>
+          <div className="panel">
+            <div className="panel-header"><span className="t-section">Routines</span><span className="t-meta">1 of 3</span></div>
+            <ul className="item-list">
+              <li className="item-row"><StaticCheck /><div className="item-main"><span className="item-title">Strength training <span className="item-tag">Upper</span></span><span className="item-notes">Day 5 of 7</span></div><MiniSeq states={['done', 'done', 'missed', 'rest', 'today*', 'upcoming', 'rest']} /></li>
+              <li className="item-row is-done"><StaticCheck checked /><div className="item-main"><span className="item-title">Read 20 pages</span><span className="item-notes">Day 1 of 1</span></div><MiniSeq states={['done*']} /></li>
+              <li className="item-row"><StaticCheck /><div className="item-main"><span className="item-title">Spanish practice <span className="item-tag">Listening</span></span><span className="item-notes">Day 2 of 3</span></div><MiniSeq states={['done', 'today*', 'rest']} /></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Lock In — the existing cinematic clip, played only while on screen.
+   -------------------------------------------------------------------------- */
+function LockInFilm() {
+  const ref = useRef(null);
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.loop = false;
-      videoRef.current.play().catch(() => {
-        console.log('Autoplay prevented. User interaction required.');
-      });
-    }
+    const v = ref.current;
+    if (!v || !('IntersectionObserver' in window) || prefersReducedMotion()) return undefined;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) v.play().catch(() => {}); else v.pause();
+    }, { threshold: 0.4 });
+    io.observe(v);
+    return () => io.disconnect();
   }, []);
+  return (
+    <div className="film">
+      <video
+        ref={ref}
+        className="film-video"
+        src="/finallockvid.mp4"
+        poster="/video-poster.jpg"
+        muted
+        playsInline
+        loop
+        preload="metadata"
+        aria-label="Lock In: a short title animation"
+      />
+      <div className="film-timer" aria-hidden="true">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="54" fill="none" strokeWidth="2" className="film-ring-track" />
+          <circle cx="60" cy="60" r="54" fill="none" strokeWidth="2" className="film-ring-fill" strokeDasharray="339.3" strokeLinecap="round" transform="rotate(-90 60 60)" />
+        </svg>
+        <span className="t-num">25:00</span>
+      </div>
+    </div>
+  );
+}
 
-  const handleVideoEnded = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-    // Smoothly auto-scroll down a little bit as soon as the video ends
-    setTimeout(() => {
-      if (window.scrollY < 100) {
-        window.scrollBy({
-          top: Math.min(window.innerHeight * 0.45, 450),
-          behavior: 'smooth'
-        });
-      }
-    }, 300);
+/* --------------------------------------------------------------------------
+   Page
+   -------------------------------------------------------------------------- */
+const FEATURES = [
+  { Icon: History, title: 'Catch up honestly', text: 'Forgot to check in yesterday? Tap the day. Days before a routine existed never count against you.' },
+  { Icon: ShieldCheck, title: 'Streaks that mean something', text: 'Consistency is calculated from real check-ins only — no inflated numbers, no gamified guilt.' },
+  { Icon: Target, title: 'Goals with a next step', text: 'Break a goal into steps. Today shows the next one, so progress happens in small daily moves.' },
+  { Icon: Command, title: 'Fast from the keyboard', text: 'Press ⌘K to jump anywhere or create anything. N adds a task, L starts a focus session.' },
+  { Icon: MoonStar, title: 'Light, dark, or system', text: 'A calm interface designed for both, with an accent color that’s yours.' },
+  { Icon: Smartphone, title: 'At home on your phone', text: 'A native-feeling layout with a tab bar and bottom sheets. Check in from anywhere.' },
+];
+
+export default function LandingPage() {
+  const { startDemo } = useAuth();
+  const navigate = useNavigate();
+
+  const tryDemo = () => {
+    startDemo();
+    navigate('/', { replace: true });
+    window.scrollTo({ top: 0 });
   };
 
   return (
-    <div className="cinematic-landing">
-      {/* Subtle background noise overlay */}
-      <div className="landing-noise-overlay" />
+    <div className="landing">
+      <a href="#landing-main" className="skip-link">Skip to content</a>
 
-      {/* Minimal Navigation Header */}
-      <nav className="cinematic-nav">
-        <div className="nav-brand">
-          <Logo size={20} style={{ color: '#ffffff', marginRight: '6px' }} />
-          <span>CADENCE</span>
+      <header className="landing-nav">
+        <Link to="/" className="brand" aria-label="Cadence home">
+          <Logo size={20} />
+          <span className="brand-name">Cadence</span>
+        </Link>
+        <nav className="landing-links" aria-label="Sections">
+          <a href="#how">How it works</a>
+          <a href="#lock-in">Lock In</a>
+          <a href="#features">Features</a>
+        </nav>
+        <div className="landing-nav-actions">
+          <Link to="/login" className="btn btn-ghost btn-sm">Sign in</Link>
+          <button type="button" className="btn btn-primary btn-sm" onClick={tryDemo}>Try the demo</button>
         </div>
-        <button className="nav-login-link" onClick={() => navigate('/login')}>
-          LOG IN
-        </button>
-      </nav>
+      </header>
 
-      {/* 1. CINEMATIC OPENING VIDEO (DOMINANT FIRST VIEWPORT) */}
-      <section className="cinematic-opening-hero">
-        <div className="cinema-video-wrapper">
-          <video
-            ref={videoRef}
-            className="cinema-hero-video"
-            src="/finallockvid.mp4"
-            autoPlay
-            muted
-            playsInline
-            onEnded={handleVideoEnded}
-          />
-        </div>
-
-        <div className="hero-scroll-indicator">
-          <span>SCROLL TO EXPLORE</span>
-          <span className="scroll-arrow">↓</span>
-        </div>
-      </section>
-
-      {/* 2. CADENCE HERO INTRODUCTION (BELOW THE VIDEO IN DOM) */}
-      <main className="cinematic-content">
-        <FadeInSection>
-          <section className="cadence-hero-intro">
-            <h1 className="hero-title">CADENCE</h1>
-            <h2 className="hero-subtitle">YOUR RHYTHM. YOUR RULES.</h2>
-            <p className="hero-description">
-              A focused workspace to plan your goals, build routines, manage tasks, and actually lock in.
-            </p>
-            <div className="hero-cta-group">
-              <button className="btn-cinematic-primary" onClick={() => navigate('/signup')}>
-                GET STARTED <ArrowRight size={14} style={{ marginLeft: '4px' }} />
+      <main id="landing-main">
+        {/* ---------------- Hero ---------------- */}
+        <section className="hero">
+          <div className="hero-copy">
+            <Reveal immediate as="div" className="hero-eyebrow">
+              <Sparkles size={13} strokeWidth={2} aria-hidden="true" /> Routines · Tasks · Goals · Focus
+            </Reveal>
+            <Reveal immediate as="h1" className="hero-title" delay={60}>
+              Keep a rhythm,<br /> not a to-do list.
+            </Reveal>
+            <Reveal immediate as="p" className="hero-sub" delay={120}>
+              Cadence repeats what matters on cycles you design — every day, three times a week, or a 20-day training block —
+              and always shows you the next thing to do.
+            </Reveal>
+            <Reveal immediate className="hero-ctas" delay={180}>
+              <button type="button" className="btn btn-primary btn-lg" onClick={tryDemo}>
+                Try the live demo <ArrowRight size={16} strokeWidth={2} />
               </button>
+              <Link to="/signup" className="btn btn-secondary btn-lg">Create free account</Link>
+            </Reveal>
+            <Reveal immediate as="p" className="hero-note t-meta" delay={220}>No signup needed for the demo. It runs entirely in your browser.</Reveal>
+          </div>
+          <Reveal immediate className="hero-visual" delay={120}>
+            <SequencerPlayground />
+          </Reveal>
+        </section>
+
+        {/* ---------------- Preview ---------------- */}
+        <section className="landing-section preview-section" aria-labelledby="preview-title">
+          <Reveal className="section-head">
+            <h2 id="preview-title" className="section-title">One calm view of your day</h2>
+            <p className="section-sub">Today answers one question — what’s next? — and keeps everything else a glance away.</p>
+          </Reveal>
+          <Reveal delay={80}><ProductPreview /></Reveal>
+        </section>
+
+        {/* ---------------- How it works ---------------- */}
+        <section id="how" className="landing-section" aria-labelledby="how-title">
+          <Reveal className="section-head">
+            <h2 id="how-title" className="section-title">How it works</h2>
+          </Reveal>
+          <ol className="steps">
+            {[
+              { Icon: Repeat, title: 'Design a routine', text: 'Pick a cycle from 1 to 20 days and the days it runs. Label them — Push, Pull, Long run.' },
+              { Icon: Check, title: 'Check in each day', text: 'Today lists what’s due. One tap marks it done; the sequence fills in as you go.' },
+              { Icon: Lock, title: 'Lock in to do the work', text: 'Start a timed, distraction-free session on any routine, task or goal.' },
+            ].map((s, i) => (
+              <Reveal as="li" key={s.title} className="step" delay={i * 80}>
+                <span className="step-num t-num">{i + 1}</span>
+                <span className="step-icon" aria-hidden="true"><s.Icon size={18} strokeWidth={1.75} /></span>
+                <h3 className="step-title">{s.title}</h3>
+                <p className="step-text">{s.text}</p>
+              </Reveal>
+            ))}
+          </ol>
+        </section>
+
+        {/* ---------------- Lock In ---------------- */}
+        <section id="lock-in" className="lockin-band" aria-labelledby="lockin-title">
+          <div className="lockin-inner">
+            <Reveal className="lockin-copy">
+              <div className="lockin-eyebrow">Focus mode</div>
+              <h2 id="lockin-title" className="section-title">When it’s time to work, lock in.</h2>
+              <p className="section-sub">
+                One task. One timer. Nothing else on screen. Cadence logs every finished session so you can see where your focus actually went.
+              </p>
+              <ul className="lockin-list">
+                <li><Timer size={15} strokeWidth={1.75} aria-hidden="true" /> 25, 50, 90 minutes — or any length you like</li>
+                <li><Coffee size={15} strokeWidth={1.75} aria-hidden="true" /> Breaks that start when you’re ready</li>
+                <li><Music size={15} strokeWidth={1.75} aria-hidden="true" /> Built-in focus sounds, or bring your own</li>
+                <li><Keyboard size={15} strokeWidth={1.75} aria-hidden="true" /> Space to pause, F for full screen</li>
+              </ul>
+            </Reveal>
+            <Reveal delay={100}><LockInFilm /></Reveal>
+          </div>
+        </section>
+
+        {/* ---------------- Features ---------------- */}
+        <section id="features" className="landing-section" aria-labelledby="features-title">
+          <Reveal className="section-head">
+            <h2 id="features-title" className="section-title">Small details, done properly</h2>
+          </Reveal>
+          <ul className="features">
+            {FEATURES.map((f, i) => (
+              <Reveal as="li" key={f.title} className="feature" delay={(i % 3) * 70}>
+                <span className="feature-icon" aria-hidden="true"><f.Icon size={18} strokeWidth={1.75} /></span>
+                <h3 className="feature-title">{f.title}</h3>
+                <p className="feature-text">{f.text}</p>
+              </Reveal>
+            ))}
+          </ul>
+        </section>
+
+        {/* ---------------- CTA ---------------- */}
+        <section className="landing-cta" aria-labelledby="cta-title">
+          <Reveal>
+            <h2 id="cta-title" className="cta-title">Your rhythm. Your rules.</h2>
+            <p className="section-sub">See it with a lived-in workspace in one click, or start fresh with your own.</p>
+            <div className="hero-ctas hero-ctas-center">
+              <button type="button" className="btn btn-primary btn-lg" onClick={tryDemo}>Try the live demo <ArrowRight size={16} strokeWidth={2} /></button>
+              <Link to="/signup" className="btn btn-secondary btn-lg">Create free account</Link>
             </div>
-          </section>
-        </FadeInSection>
-
-        {/* 3. SCROLL SECTION: WHAT IS CADENCE */}
-        <FadeInSection>
-          <section className="scroll-section-concept">
-            <h3 className="section-label">THE TEMPO</h3>
-            <h2 className="section-headline">PLAN LESS.<br />DO MORE.</h2>
-            <p className="section-intro">
-              Cadence replaces complicated project boards with a lightweight, focused rhythm designed to turn intent into execution.
-            </p>
-
-            <div className="concept-pillars">
-              <div className="pillar-item">
-                <span className="pillar-index">01</span>
-                <h4 className="pillar-title">GOALS</h4>
-                <p className="pillar-desc">Know what you're working toward.</p>
-              </div>
-
-              <div className="pillar-item">
-                <span className="pillar-index">02</span>
-                <h4 className="pillar-title">ROUTINES</h4>
-                <p className="pillar-desc">Build a rhythm that sticks.</p>
-              </div>
-
-              <div className="pillar-item">
-                <span className="pillar-index">03</span>
-                <h4 className="pillar-title">TASKS</h4>
-                <p className="pillar-desc">Turn intention into action.</p>
-              </div>
-            </div>
-          </section>
-        </FadeInSection>
-
-        {/* 4. SCROLL SECTION: LOCK IN */}
-        <FadeInSection>
-          <section className="scroll-section-lockin">
-            <h3 className="section-label">FOCUS STATE</h3>
-            <h2 className="section-headline">WHEN IT'S TIME TO WORK,<br />LOCK IN.</h2>
-            <p className="section-intro">
-              Use Cadence's focus session to turn a planned block of time into uninterrupted work. A clean, distraction-free environment to sync your thoughts.
-            </p>
-
-            {/* Subtle schematic of the Lock-In circular countdown timer */}
-            <div className="schematic-wrapper">
-              <div className="schematic-circle-container">
-                <svg className="schematic-circle-svg" viewBox="0 0 200 200">
-                  <circle className="schematic-track" cx="100" cy="100" r="90" />
-                  <circle className="schematic-fill" cx="100" cy="100" r="90" />
-                </svg>
-                <div className="schematic-time">25:00</div>
-                <div className="schematic-badge">LOCKED IN</div>
-              </div>
-            </div>
-          </section>
-        </FadeInSection>
-
-        {/* 5. SCROLL SECTION: YOUR DAY (Capabilities) */}
-        <FadeInSection>
-          <section className="scroll-section-capabilities">
-            <h3 className="section-label">WORKSPACE ENGINE</h3>
-            <h2 className="section-headline">BUILT FOR RHYTHM.</h2>
-            
-            <div className="capabilities-grid">
-              <div className="capability-stat">
-                <div className="stat-label">OBJECTIVES</div>
-                <div className="stat-val">GOALS ACTIVE</div>
-                <p className="stat-explanation">Plan multi-day targets and checklists.</p>
-              </div>
-
-              <div className="capability-stat">
-                <div className="stat-label">DAY FLOW</div>
-                <div className="stat-val">TASKS</div>
-                <p className="stat-explanation">A simple checkbox pipeline to clear your mind.</p>
-              </div>
-
-              <div className="capability-stat">
-                <div className="stat-label">BEHAVIORS</div>
-                <div className="stat-val">ROUTINES</div>
-                <p className="stat-explanation">Schedule repeating tracks for day-to-day habits.</p>
-              </div>
-
-              <div className="capability-stat">
-                <div className="stat-label">DISTRACTION-FREE</div>
-                <div className="stat-val">FOCUS TIME</div>
-                <p className="stat-explanation">Integrated sound player and custom timers.</p>
-              </div>
-            </div>
-          </section>
-        </FadeInSection>
-
-        {/* 6. FINAL CALL TO ACTION */}
-        <FadeInSection>
-          <section className="scroll-section-cta">
-            <h2 className="cta-headline">YOUR RHYTHM.<br />YOUR RULES.</h2>
-            
-            <div className="cta-actions">
-              <button className="btn-cinematic-primary lg" onClick={() => navigate('/signup')}>
-                GET STARTED
-              </button>
-              
-              <div className="cta-footer-links">
-                <span>Already have an account?</span>
-                <button className="cta-secondary-link" onClick={() => navigate('/login')}>
-                  LOG IN &rarr;
-                </button>
-              </div>
-            </div>
-          </section>
-        </FadeInSection>
+          </Reveal>
+        </section>
       </main>
 
-      {/* Cinematic Footer */}
-      <footer className="cinematic-footer">
-        <p>&copy; {new Date().getFullYear()} Cadence. All rights reserved.</p>
+      <footer className="landing-footer">
+        <div className="brand"><Logo size={16} /><span className="brand-name">Cadence</span></div>
+        <span className="t-meta">© {new Date().getFullYear()} Cadence</span>
+        <div className="landing-footer-links">
+          <Link to="/login">Sign in</Link>
+          <Link to="/signup">Create account</Link>
+        </div>
       </footer>
     </div>
   );

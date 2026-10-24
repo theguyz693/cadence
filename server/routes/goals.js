@@ -41,7 +41,7 @@ router.put('/:id', async (req, res) => {
     const goal = await Goal.findOneAndUpdate(
       { id, userId: req.userId },
       { $set: updates },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!goal) {

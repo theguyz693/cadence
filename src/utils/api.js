@@ -3,6 +3,8 @@
  * Includes JWT Token handling.
  */
 
+import { isDemoMode, demoRequest } from '../demo/demoApi.js';
+
 const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
 export function getToken() {
@@ -18,6 +20,10 @@ export function setToken(token) {
 }
 
 async function request(path, options = {}) {
+  const endpoint0 = path.startsWith('/') ? path : `/${path}`;
+  // Demo mode never talks to the server.
+  if (isDemoMode()) return demoRequest(endpoint0, options);
+
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -100,4 +106,17 @@ export async function fetchAllData() {
     fetchSettings(),
   ]);
   return { tasks, goals, routines, completions, settings };
+}
+
+// ===================== CALENDARS =====================
+export const fetchCalendarEvents = (from, to) =>
+  request(`/calendar/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+export const testCalendarUrl = (url) => request('/calendar/test', { method: 'POST', body: JSON.stringify({ url }) });
+export const createFeedToken = (timeZone) => request('/calendar/feed-token', { method: 'POST', body: JSON.stringify({ timeZone }) });
+export const revokeFeedToken = () => request('/calendar/feed-token', { method: 'DELETE' });
+
+/** Absolute, public URL of the user's Cadence calendar feed. */
+export function feedUrlFor(token) {
+  const base = /^https?:\/\//.test(BASE) ? BASE : `${window.location.origin}${BASE}`;
+  return `${base}/calendar/feed/${token}.ics`;
 }

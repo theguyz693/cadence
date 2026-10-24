@@ -11,9 +11,9 @@ const DEFAULT_FOCUS_SOUNDS = [
 ];
 
 const DEFAULT_SETTINGS = {
-  theme: 'dark',
-  accentColor: 'indigo',
-  showBanner: true,
+  theme: 'system',
+  accentColor: 'cobalt',
+  showBanner: false,
   bannerUrl: 'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif',
   bgBlur: 25,
   bgDim: 60,
@@ -50,11 +50,13 @@ router.put('/', async (req, res) => {
     delete updates._id;
     delete updates.userId;
     delete updates.__v;
+    // Managed by /api/calendar/feed-token only.
+    delete updates.calendarFeedToken;
 
     await Settings.findOneAndUpdate(
       { userId: req.userId },
       { $set: { userId: req.userId, ...updates } },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
     res.json({ success: true });
   } catch (err) {

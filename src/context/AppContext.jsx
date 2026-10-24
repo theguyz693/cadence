@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useReducer, useCallback, useRef, useState } from 'react';
 import { loadData, saveData, clearData } from '../utils/storage.js';
 import { generateId } from '../utils/helpers.js';
-import { createDefaultPattern } from '../utils/recurrence.js';
+import { createDefaultPattern, toggleRoutineCompletion } from '../utils/recurrence.js';
 import * as api from '../utils/api.js';
 import { useAuth } from './AuthContext.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
 
 const AppContext = createContext(null);
 
@@ -18,20 +19,30 @@ function appReducer(state, action) {
       return {
         ...state,
         tasks: [...state.tasks, {
-          id: generateId(),
+          id: action.payload.id || generateId(),
           title: action.payload.title,
           description: action.payload.description || '',
-          dueWithinDays: action.payload.dueWithinDays || null,
+          dueWithinDays: action.payload.dueWithinDays ?? null,
+          priority: action.payload.priority || 'none',
+          time: action.payload.time || null,
+          duration: action.payload.duration || null,
           completed: false,
+          completedAt: null,
           createdAt: new Date().toISOString(),
         }],
       };
+
+    case 'RESTORE_TASK':
+      if (state.tasks.some(t => t.id === action.payload.id)) return state;
+      return { ...state, tasks: [...state.tasks, action.payload] };
 
     case 'TOGGLE_TASK':
       return {
         ...state,
         tasks: state.tasks.map(t =>
-          t.id === action.payload ? { ...t, completed: !t.completed } : t
+          t.id === action.payload
+            ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : null }
+            : t
         ),
       };
 
@@ -54,7 +65,7 @@ function appReducer(state, action) {
       return {
         ...state,
         goals: [...state.goals, {
-          id: generateId(),
+          id: action.payload.id || generateId(),
           title: action.payload.title,
           description: action.payload.description || '',
           durationDays: action.payload.durationDays || 7,
@@ -130,6 +141,19 @@ function appReducer(state, action) {
       };
     }
 
+    case 'RESTORE_CHECKLIST_ITEM': {
+      const { goalId, item, index } = action.payload;
+      return {
+        ...state,
+        goals: state.goals.map(g => {
+          if (g.id !== goalId || g.checklist.some(i => i.id === item.id)) return g;
+          const checklist = [...g.checklist];
+          checklist.splice(Math.min(index, checklist.length), 0, item);
+          return { ...g, checklist };
+        }),
+      };
+    }
+
     case 'EDIT_CHECKLIST_ITEM': {
       const { goalId, itemId, text } = action.payload;
       return {
@@ -151,12 +175,16 @@ function appReducer(state, action) {
       return {
         ...state,
         routines: [...state.routines, {
-          id: generateId(),
+          id: action.payload.id || generateId(),
           name: action.payload.name,
-          emoji: action.payload.emoji || '📋',
+          icon: action.payload.icon || 'repeat',
+          time: action.payload.time || null,
+          duration: action.payload.duration || null,
+          emoji: action.payload.emoji || '',
           cycleLength: action.payload.cycleLength || 7,
           pattern: action.payload.pattern || createDefaultPattern(action.payload.cycleLength || 7),
-          startDate: new Date().toISOString(),
+          startDate: action.payload.startDate || new Date().toISOString(),
+          createdAt: new Date().toISOString(),
         }],
       };
 
@@ -202,7 +230,7 @@ function appReducer(state, action) {
         goals: [],
         routines: [],
         completions: {},
-        settings: { theme: 'dark', uiTheme: 'default' },
+        settings: { ...emptyState.settings, theme: state.settings?.theme, accentColor: state.settings?.accentColor },
       };
 
     default:
@@ -214,7 +242,7 @@ function appReducer(state, action) {
  * Sync state changes to the backend API.
  * Called after each dispatch with the action and the new state.
  */
-async function syncToApi(action, newState, prevState) {
+async function syncToApi(action, newState, prevState, onError) {
   try {
     switch (action.type) {
       // --- TASKS ---
@@ -223,6 +251,9 @@ async function syncToApi(action, newState, prevState) {
         await api.createTask(newTask);
         break;
       }
+      case 'RESTORE_TASK':
+        await api.createTask(action.payload);
+        break;
       case 'TOGGLE_TASK':
       case 'EDIT_TASK': {
         const id = action.type === 'TOGGLE_TASK' ? action.payload : action.payload.id;
@@ -245,6 +276,7 @@ async function syncToApi(action, newState, prevState) {
       case 'TOGGLE_CHECKLIST_ITEM':
       case 'ADD_CHECKLIST_ITEM':
       case 'DELETE_CHECKLIST_ITEM':
+      case 'RESTORE_CHECKLIST_ITEM':
       case 'EDIT_CHECKLIST_ITEM': {
         // Find the affected goal ID
         let goalId;
@@ -317,7 +349,8 @@ async function syncToApi(action, newState, prevState) {
         break;
     }
   } catch (err) {
-    console.warn('API sync failed (data is safe in localStorage):', err.message);
+    console.warn('API sync failed:', err.message);
+    onError?.(err);
   }
 }
 
@@ -327,10 +360,9 @@ const emptyState = {
   routines: [],
   completions: {},
   settings: {
-    theme: 'dark',
-    uiTheme: 'default',
-    accentColor: 'indigo',
-    showBanner: true,
+    theme: 'system',
+    accentColor: 'cobalt',
+    showBanner: false,
     bgBlur: 25,
     bgDim: 60,
     activeBackground: 'random',
@@ -341,6 +373,7 @@ const emptyState = {
 export function AppProvider({ children }) {
 
   const { user } = useAuth();
+  const { toast } = useToast();
   const [state, dispatch] = useReducer(appReducer, null, loadData);
   const [loading, setLoading] = useState(true);
   const [apiAvailable, setApiAvailable] = useState(true);
@@ -400,20 +433,54 @@ export function AppProvider({ children }) {
     // Process all queued actions
     const items = queue.splice(0, queue.length);
     for (const { action, prevState } of items) {
-      syncToApi(action, state, prevState);
+      syncToApi(action, state, prevState, notifySyncError);
     }
-  }, [state, apiAvailable]);
+  }, [state, apiAvailable]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Surface sync failures once per burst instead of failing silently.
+  const lastSyncErrorRef = useRef(0);
+  function notifySyncError(err) {
+    const now = Date.now();
+    if (now - lastSyncErrorRef.current < 4000) return;
+    lastSyncErrorRef.current = now;
+    toast({
+      tone: 'error',
+      title: "Couldn't save your last change",
+      description: err?.message?.startsWith('Unable to connect')
+        ? "Cadence can't reach the server. Check your connection and try again."
+        : err?.message || 'Please try again.',
+    });
+  }
+
+  const retryConnection = useCallback(async () => {
+    if (!user) return false;
+    setLoading(true);
+    try {
+      const data = await api.fetchAllData();
+      dispatch({ type: 'HYDRATE', payload: data });
+      saveData(data);
+      setApiAvailable(true);
+      return true;
+    } catch {
+      setApiAvailable(false);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   const value = {
     state,
     loading,
     apiAvailable,
+    retryConnection,
     dispatch: trackedDispatch,
     // Convenience action creators
     addTask: useCallback((payload) => trackedDispatch({ type: 'ADD_TASK', payload }), [trackedDispatch]),
     toggleTask: useCallback((id) => trackedDispatch({ type: 'TOGGLE_TASK', payload: id }), [trackedDispatch]),
     deleteTask: useCallback((id) => trackedDispatch({ type: 'DELETE_TASK', payload: id }), [trackedDispatch]),
     editTask: useCallback((id, updates) => trackedDispatch({ type: 'EDIT_TASK', payload: { id, updates } }), [trackedDispatch]),
+    restoreTask: useCallback((task) => trackedDispatch({ type: 'RESTORE_TASK', payload: task }), [trackedDispatch]),
 
     addGoal: useCallback((payload) => trackedDispatch({ type: 'ADD_GOAL', payload }), [trackedDispatch]),
     editGoal: useCallback((id, updates) => trackedDispatch({ type: 'EDIT_GOAL', payload: { id, updates } }), [trackedDispatch]),
@@ -423,11 +490,16 @@ export function AppProvider({ children }) {
     addChecklistItem: useCallback((goalId, text) => trackedDispatch({ type: 'ADD_CHECKLIST_ITEM', payload: { goalId, text } }), [trackedDispatch]),
     deleteChecklistItem: useCallback((goalId, itemId) => trackedDispatch({ type: 'DELETE_CHECKLIST_ITEM', payload: { goalId, itemId } }), [trackedDispatch]),
     editChecklistItem: useCallback((goalId, itemId, text) => trackedDispatch({ type: 'EDIT_CHECKLIST_ITEM', payload: { goalId, itemId, text } }), [trackedDispatch]),
+    restoreChecklistItem: useCallback((goalId, item, index) => trackedDispatch({ type: 'RESTORE_CHECKLIST_ITEM', payload: { goalId, item, index } }), [trackedDispatch]),
 
     addRoutine: useCallback((payload) => trackedDispatch({ type: 'ADD_ROUTINE', payload }), [trackedDispatch]),
     editRoutine: useCallback((id, updates) => trackedDispatch({ type: 'EDIT_ROUTINE', payload: { id, updates } }), [trackedDispatch]),
     deleteRoutine: useCallback((id) => trackedDispatch({ type: 'DELETE_ROUTINE', payload: id }), [trackedDispatch]),
     setCompletions: useCallback((completions) => trackedDispatch({ type: 'SET_COMPLETIONS', payload: completions }), [trackedDispatch]),
+    toggleRoutineDay: useCallback((routineId, date = new Date()) => trackedDispatch({
+      type: 'SET_COMPLETIONS',
+      payload: toggleRoutineCompletion(state.completions, routineId, date),
+    }), [trackedDispatch, state.completions]),
 
     updateSettings: useCallback((payload) => trackedDispatch({ type: 'UPDATE_SETTINGS', payload }), [trackedDispatch]),
     clearAll: useCallback(() => trackedDispatch({ type: 'CLEAR_ALL' }), [trackedDispatch]),

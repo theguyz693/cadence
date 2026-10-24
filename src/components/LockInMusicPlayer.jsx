@@ -188,91 +188,38 @@ export default function LockInMusicPlayer() {
   // No sounds configured edge case
   if (sounds.length === 0) {
     return (
-      <div className="lock-in-music-player">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-sm)' }}>
-          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>No focus sounds yet</span>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => navigate('/settings')}
-            style={{ fontSize: '11px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}
-          >
-            <Plus size={12} /> Add Sound
-          </button>
-        </div>
+      <div className="player">
+        <span className="player-empty">No focus sounds yet</span>
+        <button type="button" className="focus-ghost-btn" onClick={() => navigate('/settings')}>
+          <Plus size={13} /> Add a sound
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="lock-in-music-player">
-      {/* Header with track name display & indicator */}
-      <div className="music-player-header">
-        <div className="music-title-group" style={{ flex: 1, minWidth: 0 }}>
-          <Music size={14} className={`music-icon ${isPlaying ? 'spinning' : ''}`} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-          <span className="music-label" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {currentSound?.name || 'Focus Sound'}
-          </span>
-          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
-            ({trackIndex + 1}/{sounds.length})
-          </span>
+    <div className="player" aria-label="Focus sound">
+      <div className="player-row">
+        <button type="button" className="player-btn" onClick={() => changeTrack(trackIndex - 1)} aria-label="Previous sound">
+          <SkipBack size={15} strokeWidth={1.75} />
+        </button>
+        <button type="button" className="player-btn player-play" onClick={togglePlay} aria-label={isPlaying ? 'Pause sound' : 'Play sound'} aria-pressed={isPlaying}>
+          {isPlaying ? <Pause size={16} strokeWidth={2} /> : <Play size={16} strokeWidth={2} />}
+        </button>
+        <button type="button" className="player-btn" onClick={() => changeTrack(trackIndex + 1)} aria-label="Next sound">
+          <SkipForward size={15} strokeWidth={1.75} />
+        </button>
+        <div className="player-track">
+          <Music size={13} strokeWidth={1.75} aria-hidden="true" className={isPlaying ? 'is-playing' : ''} />
+          <span className="truncate">{currentSound?.name || 'Focus sound'}</span>
+          <span className="player-count t-num">{trackIndex + 1}/{sounds.length}</span>
         </div>
-      </div>
-
-      {/* Error Banner */}
-      {audioError && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--color-danger)', background: 'rgba(248, 113, 113, 0.1)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', marginBottom: '8px' }}>
-          <AlertCircle size={12} /> Unable to play this sound. Try another track or edit source in Settings.
-        </div>
-      )}
-
-      {/* Main Controls Row: Previous, Play/Pause, Next */}
-      <div className="music-player-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-md)' }}>
-        <button
-          type="button"
-          className="btn btn-ghost btn-icon music-prev-btn"
-          onClick={() => changeTrack(trackIndex - 1)}
-          title="Previous Track"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          <SkipBack size={16} strokeWidth={1.75} />
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-primary btn-icon music-play-btn"
-          onClick={togglePlay}
-          title={isPlaying ? 'Pause Sound' : 'Play Sound'}
-          style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          {isPlaying ? <Pause size={18} strokeWidth={2.2} /> : <Play size={18} strokeWidth={2.2} style={{ marginLeft: '2px' }} />}
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-ghost btn-icon music-next-btn"
-          onClick={() => changeTrack(trackIndex + 1)}
-          title="Next Track"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          <SkipForward size={16} strokeWidth={1.75} />
-        </button>
-      </div>
-
-      {/* Volume slider & Mute toggle */}
-      <div className="music-volume-row" style={{ marginTop: 'var(--space-sm)' }}>
-        <button
-          type="button"
-          className="btn btn-ghost btn-icon music-mute-btn"
-          onClick={() => setIsMuted(!isMuted)}
-          title={isMuted ? 'Unmute' : 'Mute'}
-          style={{ color: 'var(--text-tertiary)', padding: 4 }}
-        >
-          {isMuted || volume === 0 ? <VolumeX size={14} /> : <Volume2 size={14} />}
+        <button type="button" className="player-btn" onClick={() => setIsMuted(!isMuted)} aria-label={isMuted ? 'Unmute' : 'Mute'} aria-pressed={isMuted}>
+          {isMuted || volume === 0 ? <VolumeX size={15} strokeWidth={1.75} /> : <Volume2 size={15} strokeWidth={1.75} />}
         </button>
         <input
           type="range"
-          className="music-slider volume-slider"
+          className="player-volume"
           min={0}
           max={1}
           step={0.05}
@@ -281,9 +228,14 @@ export default function LockInMusicPlayer() {
             setVolume(parseFloat(e.target.value));
             if (isMuted) setIsMuted(false);
           }}
-          style={{ flex: 1 }}
+          aria-label="Volume"
         />
       </div>
+      {audioError && (
+        <div className="player-error" role="alert">
+          <AlertCircle size={13} /> Couldn't play this sound. Try another, or check its link in Settings.
+        </div>
+      )}
     </div>
   );
 }
