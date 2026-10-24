@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { AuthLayout, AuthError, PasswordInput, DemoLink } from './AuthLayout.jsx';
+import { AuthLayout, AuthError, PasswordInput, DemoLink, GoogleAuth } from './AuthLayout.jsx';
 import { Spinner } from '../components/ui/primitives.jsx';
 
 const MIN_USERNAME = 2;
@@ -50,6 +50,7 @@ export default function Signup() {
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <AuthError>{error}</AuthError>
+        <GoogleAuth text="signup_with" onError={setError} />
 
         <div className={`field ${show('username', submitted) ? 'has-error' : ''}`}>
           <label className="field-label" htmlFor="signup-username">Username</label>

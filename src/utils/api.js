@@ -61,6 +61,8 @@ export const signupApi = (credentials) => request('/auth/signup', { method: 'POS
 export const loginApi = (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const logoutApi = () => request('/auth/logout', { method: 'POST' });
 export const fetchMeApi = () => request('/auth/me');
+export const fetchAuthConfig = () => request('/auth/config');
+export const googleLoginApi = (credential) => request('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) });
 
 // ===================== TASKS =====================
 export const fetchTasks = () => request('/tasks');

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { AuthLayout, AuthError, PasswordInput, DemoLink } from './AuthLayout.jsx';
+import { AuthLayout, AuthError, PasswordInput, DemoLink, GoogleAuth } from './AuthLayout.jsx';
 import { Spinner } from '../components/ui/primitives.jsx';
 
 export default function Login() {
@@ -42,6 +42,7 @@ export default function Login() {
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <AuthError>{error}</AuthError>
+        <GoogleAuth text="continue_with" onError={setError} />
 
         <div className={`field ${fieldErrors.username ? 'has-error' : ''}`}>
           <label className="field-label" htmlFor="username">Username</label>

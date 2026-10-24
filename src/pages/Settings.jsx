@@ -179,7 +179,12 @@ export default function Settings() {
               </button>
             </Row>
           ) : (
-            <Row label={user?.username || 'Account'} description="Signed in. Your data syncs to this account across devices.">
+            <Row
+              label={user?.name || user?.username || 'Account'}
+              description={user?.provider === 'google'
+                ? `Signed in with Google${user.email ? ` as ${user.email}` : ''}. Your data syncs across devices.`
+                : 'Signed in. Your data syncs to this account across devices.'}
+            >
               <button type="button" className="btn btn-secondary btn-sm" onClick={handleLogout}>
                 <LogOut size={14} strokeWidth={1.75} /> Sign out
               </button>

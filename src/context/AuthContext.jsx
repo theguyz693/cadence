@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { loginApi, signupApi, logoutApi, fetchMeApi, getToken, setToken } from '../utils/api.js';
+import { loginApi, signupApi, logoutApi, fetchMeApi, googleLoginApi, getToken, setToken } from '../utils/api.js';
 import { enterDemoMode, exitDemoMode, isDemoMode } from '../demo/demoApi.js';
 
 const AuthContext = createContext(null);
@@ -46,6 +46,14 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  /** Exchange a Google ID token for a Cadence session. */
+  const loginWithGoogle = useCallback(async (credential) => {
+    const data = await googleLoginApi(credential);
+    setToken(data.token);
+    setUser(data.user);
+    return data;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await logoutApi();
@@ -72,6 +80,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     isDemo: !!user?.demo,
     startDemo,
+    loginWithGoogle,
     login,
     signup,
     logout,

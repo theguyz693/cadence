@@ -1289,3 +1289,25 @@ button.tl-pill:not(:disabled):hover { color: var(--text); }
 .feed-url .input { font-family: var(--font-mono); font-size: 12px; }
 .cal-block.is-short .tl-time { display: none; }
 .cal-block.is-short .tl-title { font-size: 11px; }
+
+/* Google sign-in */
+.google-auth { display: flex; flex-direction: column; gap: 16px; }
+.google-auth:not(.is-available) { gap: 0; }
+.google-auth-button { position: relative; min-height: 0; }
+.google-auth.is-available .google-auth-button { min-height: 44px; }
+.google-btn { display: flex; justify-content: center; width: 100%; color-scheme: normal; }
+.google-btn iframe { margin: 0 auto !important; }
+.google-auth-busy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.auth-divider { display: flex; align-items: center; gap: 12px; font-size: var(--text-xs); color: var(--text-tertiary); }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--divider); }
