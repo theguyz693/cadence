@@ -251,3 +251,62 @@ html[data-ui="standard"] {
   & .t-meta { color: var(--text-tertiary); }
   & .avatar { background: var(--accent); color: var(--accent-fg); }
 }
+
+/* ---- Lock In: Software by day (white, blue arc), Modern Dark by night ---- */
+html[data-ui="standard"] .focus-mode {
+  --ring: #074ce0;
+  --fm-bg: #fcfcfd;
+  --fm-ink: #16191f;
+  --fm-ink-2: #454c58;
+  --fm-ink-3: #5d6470;
+  --fm-ink-4: #8a909b;
+  --fm-tint: #f3f4f6;
+  --fm-tint-hover: #e8eaee;
+  --fm-line: #dde0e6;
+  --fm-track: #e6e8ed;
+  --fm-tick: #c9cdd5;
+  --fm-comet: #ffffff;
+  --fm-primary: #074ce0;
+  --fm-primary-hover: #0640c0;
+  --fm-primary-fg: #ffffff;
+  --fm-panel: #ffffff;
+  --fm-glow: 0%;
+  --fm-radius: 8px;
+  color-scheme: light;
+  &.is-break { --ring: #0f8a5f; }
+  & .focus-title { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; }
+  & .focus-countdown { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.06em; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-width: 4; }
+  & .focus-ring-track { stroke-width: 4; }
+  & .focus-comet-glow { opacity: 0.25; }
+  & .focus-comet-head { stroke: var(--ring); stroke-width: 2.5; }
+  & .focus-confirm { box-shadow: 0 24px 60px -16px rgba(22, 25, 31, 0.25); }
+}
+html[data-ui="standard"][data-theme="dark"] .focus-mode {
+  --ring: #f2f2f2;
+  --fm-bg: #050505;
+  --fm-ink: #f2f2f2;
+  --fm-ink-2: #a6a9ad;
+  --fm-ink-3: #8a8d91;
+  --fm-ink-4: #5f6266;
+  --fm-tint: #0e0e0e;
+  --fm-tint-hover: #181818;
+  --fm-line: #222222;
+  --fm-track: #1a1a1a;
+  --fm-tick: #303030;
+  --fm-comet: #050505;
+  --fm-primary: #f2f2f2;
+  --fm-primary-hover: #ffffff;
+  --fm-primary-fg: #0a0a0a;
+  --fm-panel: #0e0e0e;
+  --fm-glow: 5%;
+  --fm-radius: 999px;
+  color-scheme: dark;
+  &.is-break { --ring: #3fd6c6; }
+  & .focus-status-dot.is-running { background: #3fd6c6; }
+  & .focus-ring-fill { stroke-width: 2; }
+  & .focus-ring-track { stroke-width: 2; }
+  & .focus-countdown { font-family: var(--font-mono); font-weight: 400; letter-spacing: -0.04em; }
+  & .focus-comet-glow { opacity: 0.4; }
+  & .focus-comet-head { stroke: #f2f2f2; stroke-width: 2; }
+}

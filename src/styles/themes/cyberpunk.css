@@ -161,3 +161,43 @@ html[data-ui="cyberpunk"] {
     & .tab.is-active .tab-icon { background: transparent; box-shadow: inset 0 -2px 0 var(--accent); border-radius: 0; }
   }
 }
+
+/* ---- Lock In: a green signal counter on the black field ---- */
+html[data-ui="cyberpunk"] .focus-mode {
+  --ring: #38ff8e;
+  --fm-bg: #020303;
+  --fm-ink: #f8fffa;
+  --fm-ink-2: #d3dbd5;
+  --fm-ink-3: #c2cbc5;
+  --fm-ink-4: #659579;
+  --fm-tint: #090e0b;
+  --fm-tint-hover: #0f1813;
+  --fm-line: #304c3b;
+  --fm-track: #142219;
+  --fm-tick: #304c3b;
+  --fm-comet: #f8fffa;
+  --fm-primary: #38ff8e;
+  --fm-primary-hover: #f8fffa;
+  --fm-primary-fg: #020303;
+  --fm-panel: #050907;
+  --fm-glow: 6%;
+  --fm-radius: 0;
+  font-family: var(--font-mono);
+  background-image: repeating-linear-gradient(0deg, rgba(56, 255, 142, 0.03) 0 1px, transparent 1px 3px);
+  &.is-break { --ring: #65f8ff; }
+  & .focus-title { font-family: var(--font-display); text-transform: uppercase; font-weight: 600; text-shadow: -1.5px 0 #65f8ff, 1.5px 0 #ff65d8; }
+  & .focus-status, & .focus-btn, & .focus-ghost-btn, & .focus-hints { text-transform: uppercase; letter-spacing: 0.06em; }
+  & .focus-status { border-radius: 0; box-shadow: inset 0 0 0 1px var(--fm-line); }
+  & .focus-countdown { font-weight: 500; letter-spacing: -0.04em; color: var(--ring); text-shadow: -2px 0 rgba(101, 248, 255, 0.55), 2px 0 rgba(255, 101, 216, 0.55); }
+  & .focus-ring-fill { stroke: var(--ring); stroke-linecap: butt; stroke-width: 2; }
+  & .focus-ring-track { stroke-width: 2; stroke-dasharray: 2 4; stroke: #304c3b; }
+  & .focus-ticks line { stroke-linecap: square; }
+  & .focus-ticks line:nth-child(5n + 1) { stroke: #659579; }
+  & .focus-comet-head { fill: #f8fffa; }
+  & .focus-btn { font-size: 0.75rem; font-weight: 600; transition: none; box-shadow: inset 0 0 0 1px var(--fm-line); }
+  & .focus-btn-primary { box-shadow: none; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+  & .focus-btn-ghost { box-shadow: none; }
+  & .focus-btn:active { transform: translate(1px, 1px); }
+  & .focus-btn-danger { background: #ff65d8; color: #020303; }
+  & .focus-confirm { border-radius: 0; }
+}

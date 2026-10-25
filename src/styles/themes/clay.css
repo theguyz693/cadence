@@ -158,3 +158,52 @@ html[data-ui="clay"] {
     & .tab.is-active .tab-icon { background: var(--accent); box-shadow: var(--clay-small); border-radius: 999px; }
   }
 }
+
+/* ---- Lock In: a cream clay dial with a thick pink arc ---- */
+html[data-ui="clay"] .focus-mode {
+  --ring: #f6a3ca;
+  --fm-bg: #f1f2fa;
+  --fm-ink: #383139;
+  --fm-ink-2: #48404b;
+  --fm-ink-3: #5d5460;
+  --fm-ink-4: #8d838f;
+  --fm-tint: #fffdf7;
+  --fm-tint-hover: #ffffff;
+  --fm-line: rgba(56, 49, 57, 0.1);
+  --fm-track: #e7e8f3;
+  --fm-tick: rgba(56, 49, 57, 0.18);
+  --fm-comet: #fffdf7;
+  --fm-primary: #f6a3ca;
+  --fm-primary-hover: #f291bf;
+  --fm-primary-fg: #383139;
+  --fm-panel: #fffdf7;
+  --fm-glow: 0%;
+  --fm-radius: 999px;
+  color-scheme: light;
+  &.is-break { --ring: #8fdcbc; }
+  & .focus-title { font-weight: 700; letter-spacing: -0.035em; }
+  & .focus-status { box-shadow: var(--clay-small); }
+  & .focus-timer::before {
+    content: '';
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    background: #fffdf7;
+    box-shadow: 14px 18px 36px rgba(56, 49, 57, 0.16), inset 4px 4px 8px rgba(255, 255, 255, 0.95), inset -6px -8px 14px rgba(56, 49, 57, 0.08);
+  }
+  & .focus-timer svg { position: relative; }
+  & .focus-ticks { display: none; }
+  & .focus-ring-track { stroke-width: 14; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-width: 14; }
+  & .focus-comet-glow { display: none; }
+  & .focus-comet-head { r: 5; fill: #fffdf7; }
+  & .focus-countdown { font-weight: 700; letter-spacing: -0.05em; }
+  & .focus-btn { font-weight: 700; background: #fffdf7; box-shadow: var(--clay-small); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+  & .focus-btn:hover { transform: translateY(-2px); }
+  & .focus-btn:active { transform: translateY(1px) scale(0.97); box-shadow: var(--clay-pressed); }
+  & .focus-btn-primary { background: var(--ring); }
+  & .focus-btn-ghost { background: transparent; box-shadow: none; }
+  & .focus-btn-danger { background: #f6a3ca; color: #383139; }
+  & .player { box-shadow: var(--clay-well); background: #e7e8f3; border: none; }
+  & .focus-confirm { border: none; border-radius: 34px; box-shadow: var(--shadow-lg); }
+}

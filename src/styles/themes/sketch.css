@@ -152,3 +152,56 @@ html[data-ui="sketch"] {
     & .tab.is-active .tab-icon { background: var(--highlight); border-radius: var(--sk-radius-alt); }
   }
 }
+
+/* ---- Lock In: a clock drawn in the notebook margin, red pen arc ---- */
+html[data-ui="sketch"] .focus-mode {
+  --ring: #9e3a2e;
+  --fm-bg: #f7f2e7;
+  --fm-ink: #38352f;
+  --fm-ink-2: #514d44;
+  --fm-ink-3: #625d52;
+  --fm-ink-4: #8f897b;
+  --fm-tint: #fcf8ef;
+  --fm-tint-hover: #f0dfa0;
+  --fm-line: #38352f;
+  --fm-track: #b3ac9d;
+  --fm-tick: #38352f;
+  --fm-comet: #9e3a2e;
+  --fm-primary: #9e3a2e;
+  --fm-primary-hover: #9e3a2e;
+  --fm-primary-fg: #fcf8ef;
+  --fm-panel: #fcf8ef;
+  --fm-glow: 0%;
+  --fm-radius: 4px 14px 6px 11px / 11px 5px 13px 4px;
+  color-scheme: light;
+  background-image: repeating-linear-gradient(180deg, transparent 0 31px, rgba(52, 76, 105, 0.08) 31px 32px);
+  &.is-break { --ring: #344c69; }
+  & .focus-title { font-family: var(--font-display); font-weight: 700; font-size: 1.875rem; }
+  & .focus-status { border: 1.5px solid #38352f; color: #344c69; }
+  & .focus-timer { rotate: -1.5deg; }
+  & .focus-timer::before {
+    content: '';
+    position: absolute;
+    inset: 2%;
+    border: 1.5px solid #38352f;
+    border-radius: 49% 51% 47% 53% / 52% 48% 52% 48%;
+    background: #fcf8ef;
+    box-shadow: 4px 5px 0 rgba(56, 53, 47, 0.85);
+  }
+  & .focus-timer svg { position: relative; }
+  & .focus-ticks line { stroke-width: 1.5; }
+  & .focus-ticks line:nth-child(even) { display: none; }
+  & .focus-ring-track { stroke-width: 1.5; stroke-dasharray: 5 6; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-width: 4; }
+  & .focus-comet-glow { display: none; }
+  & .focus-comet-head { r: 5; fill: #9e3a2e; }
+  & .focus-countdown { font-family: var(--font-display); font-weight: 700; letter-spacing: 0; }
+  & .focus-meta { color: #344c69; }
+  & .focus-btn { font-family: var(--font-display); font-weight: 700; border: 1.5px solid #38352f; box-shadow: 2px 2px 0 #38352f; transition: transform var(--dur-fast) var(--ease-out); }
+  & .focus-btn:hover { transform: rotate(-1deg) translateY(-1px); }
+  & .focus-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+  & .focus-btn-ghost { border-color: transparent; box-shadow: none; }
+  & .focus-btn-danger { background: #9e3a2e; color: #fcf8ef; }
+  & :focus-visible { box-shadow: none; outline: 2px dashed #344c69; outline-offset: 3px; }
+  & .focus-confirm { border: 1.5px solid #38352f; box-shadow: 4px 5px 0 rgba(56, 53, 47, 0.85); }
+}

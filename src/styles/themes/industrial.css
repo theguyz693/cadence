@@ -149,3 +149,53 @@ html[data-ui="industrial"] {
     & .tab.is-active .tab-icon { background: var(--bg-sunken); box-shadow: var(--recessed); border-radius: var(--radius-md); }
   }
 }
+
+/* ---- Lock In: a recessed instrument screen set in the grey chassis ---- */
+html[data-ui="industrial"] .focus-mode {
+  --ring: #f15b22;
+  --fm-bg: #cbd0d2;
+  --fm-ink: #181e22;
+  --fm-ink-2: #414b52;
+  --fm-ink-3: #4c575e;
+  --fm-ink-4: #7b868c;
+  --fm-tint: #e7eaeb;
+  --fm-tint-hover: #eef0f1;
+  --fm-line: rgba(24, 30, 34, 0.2);
+  --fm-comet: #f2f4f4;
+  --fm-primary: #f15b22;
+  --fm-primary-hover: #dc4e18;
+  --fm-primary-fg: #181e22;
+  --fm-panel: #e7eaeb;
+  --fm-glow: 0%;
+  --fm-radius: 4px;
+  color-scheme: light;
+  &.is-break { --ring: #3fbf7f; }
+  & .focus-title { font-weight: 700; letter-spacing: -0.03em; }
+  & .focus-status { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; border-radius: 4px; box-shadow: var(--raised); }
+  & .focus-status-dot.is-running { box-shadow: 0 0 6px var(--ring); }
+  /* the screen: a dark disc in a raised bezel */
+  & .focus-timer { --fm-track: rgba(242, 244, 244, 0.1); --fm-tick: rgba(242, 244, 244, 0.28); }
+  & .focus-timer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #20272b;
+    box-shadow: 0 0 0 10px #e7eaeb, 0 0 0 11px rgba(24, 30, 34, 0.18), 6px 10px 22px 10px rgba(24, 30, 34, 0.28), inset 3px 5px 14px rgba(0, 0, 0, 0.65);
+  }
+  & .focus-timer svg { position: relative; }
+  & .focus-ticks line:nth-child(5n + 1) { stroke: #f15b22; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-linecap: butt; stroke-width: 6; }
+  & .focus-ring-track { stroke-width: 6; }
+  & .focus-comet-glow { opacity: 0.6; }
+  & .focus-countdown { font-family: var(--font-mono); font-weight: 500; color: #f2f4f4; text-shadow: 0 0 12px rgba(242, 244, 244, 0.18); }
+  & .is-paused .focus-countdown, &.is-paused .focus-countdown { color: rgba(242, 244, 244, 0.55); }
+  & .focus-meta { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.6875rem; color: #d8dee1; }
+  & .focus-btn { font-weight: 600; box-shadow: var(--raised); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+  & .focus-btn:active { transform: translateY(1px); box-shadow: var(--recessed); }
+  & .focus-btn-primary { box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.45), inset -1px -1px 0 rgba(0, 0, 0, 0.2), 2px 3px 4px rgba(24, 30, 34, 0.28); }
+  & .focus-btn-ghost { box-shadow: none; }
+  & .focus-btn-danger { background: #181e22; color: #f2f4f4; }
+  & .player { background: #b6bec2; box-shadow: var(--recessed); border: none; }
+  & .focus-confirm { border: none; border-radius: 22px; box-shadow: var(--shadow-lg); }
+}

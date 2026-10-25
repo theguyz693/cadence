@@ -145,3 +145,64 @@ html[data-ui="playful"] {
     & .tab.is-active .tab-icon { background: var(--pg-amber); border: var(--pg-detail); border-radius: 10px; }
   }
 }
+
+/* ---- Lock In: an outlined sticker dial with a fat violet arc ---- */
+html[data-ui="playful"] .focus-mode {
+  --ring: #6434df;
+  --fm-bg: #fffdf5;
+  --fm-ink: #253044;
+  --fm-ink-2: #3d475c;
+  --fm-ink-3: #535c70;
+  --fm-ink-4: #8b8a9b;
+  --fm-tint: #ffffff;
+  --fm-tint-hover: #f1ebff;
+  --fm-line: #252b3a;
+  --fm-track: #f1ebff;
+  --fm-tick: #252b3a;
+  --fm-comet: #ffd05b;
+  --fm-primary: #6434df;
+  --fm-primary-hover: #6434df;
+  --fm-primary-fg: #ffffff;
+  --fm-panel: #ffffff;
+  --fm-glow: 0%;
+  --fm-radius: 14px;
+  color-scheme: light;
+  &.is-break { --ring: #19b47a; }
+  & .focus-title { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em; }
+  & .focus-status { border: 2px solid #252b3a; background: #ffd05b; color: #253044; }
+  & .focus-timer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #252b3a;
+    box-shadow: 7px 7px 0 #252b3a;
+  }
+  & .focus-timer::after {
+    content: '';
+    position: absolute;
+    top: -1%;
+    right: 3%;
+    z-index: 1;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #ff78c5;
+    border: 2px solid #252b3a;
+  }
+  & .focus-timer svg { position: relative; }
+  & .focus-ticks { display: none; }
+  & .focus-ring-track { stroke-width: 16; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-width: 16; }
+  & .focus-comet-glow { display: none; }
+  & .focus-comet-head { r: 9; fill: #ffd05b; stroke: #252b3a; stroke-width: 2.5; }
+  & .focus-countdown { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.05em; }
+  & .focus-btn { font-weight: 700; border: 2px solid #252b3a; box-shadow: 3px 3px 0 #252b3a; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+  & .focus-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #252b3a; }
+  & .focus-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #252b3a; }
+  & .focus-btn-ghost { border-color: transparent; box-shadow: none; }
+  & .focus-btn-danger { background: #ff78c5; color: #253044; }
+  & .player { border-width: 2px; }
+  & .focus-confirm { border: 3px solid #252b3a; box-shadow: 7px 7px 0 #252b3a; border-radius: 22px; }
+}

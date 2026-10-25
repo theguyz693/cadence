@@ -138,3 +138,44 @@ html[data-ui="organic"] {
     & .tab.is-active .tab-icon { background: var(--bg-sunken); }
   }
 }
+
+/* ---- Lock In: sand paper, a moss arc, serif numerals ---- */
+html[data-ui="organic"] .focus-mode {
+  --ring: #35422d;
+  --fm-bg: #eee6d6;
+  --fm-ink: #29251d;
+  --fm-ink-2: #443b2f;
+  --fm-ink-3: #5c5243;
+  --fm-ink-4: #8a8070;
+  --fm-tint: #f5eddf;
+  --fm-tint-hover: #e7dcc8;
+  --fm-line: rgba(41, 37, 29, 0.14);
+  --fm-track: #ddd5c3;
+  --fm-tick: rgba(41, 37, 29, 0.2);
+  --fm-comet: #ad7d62;
+  --fm-primary: #35422d;
+  --fm-primary-hover: #2b3624;
+  --fm-primary-fg: #f5eddf;
+  --fm-panel: #f5eddf;
+  --fm-glow: 0%;
+  --fm-radius: 27px 19px 29px 16px / 22px 26px 19px 29px;
+  color-scheme: light;
+  &.is-break { --ring: #ad7d62; }
+  & .focus-title { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.02em; font-size: 1.75rem; }
+  & .focus-countdown { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.03em; }
+  & .focus-timer::before {
+    content: '';
+    position: absolute;
+    inset: 7%;
+    border-radius: 48% 52% 46% 54% / 52% 46% 54% 48%;
+    background: #f5eddf;
+    border: 1px solid rgba(41, 37, 29, 0.1);
+  }
+  & .focus-timer svg { position: relative; }
+  & .focus-ring-track { stroke-width: 5; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-width: 5; }
+  & .focus-comet-glow { display: none; }
+  & .focus-comet-head { r: 6; fill: #ad7d62; }
+  & .focus-btn { font-weight: 600; }
+  & .focus-btn-danger { background: #8f3b25; color: #f5eddf; }
+}
