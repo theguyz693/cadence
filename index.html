@@ -16,18 +16,22 @@
       (function () {
         try {
           var a = JSON.parse(localStorage.getItem('cadence_appearance') || '{}');
-          var t = a.theme === 'light' || a.theme === 'dark' ? a.theme
-            : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          var single = { cyberpunk: 'dark', clay: 'light', organic: 'light', playful: 'light', sketch: 'light', industrial: 'light', retro: 'light' };
+          var ui = a.ui || 'standard';
+          var t = single[ui] || (a.theme === 'light' || a.theme === 'dark' ? a.theme
+            : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+          document.documentElement.dataset.ui = ui;
           document.documentElement.dataset.theme = t;
           document.documentElement.dataset.accent = a.accent || 'ember';
         } catch (e) {
           document.documentElement.dataset.theme = 'light';
+          document.documentElement.dataset.ui = 'standard';
         }
       })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700;800&family=Instrument+Sans:wght@400;500;600;700&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>

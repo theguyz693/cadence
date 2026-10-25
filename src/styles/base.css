@@ -64,6 +64,10 @@ button:disabled { cursor: not-allowed; }
 
 a { color: inherit; text-decoration: none; }
 
+h1, h2, h3, h4,
+.t-title, .t-display, .t-heading, .dialog-title, .brand-name, .section-title, .cta-title {
+  font-family: var(--font-display);
+}
 h1, h2, h3, h4 {
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);

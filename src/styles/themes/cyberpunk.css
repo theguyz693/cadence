@@ -1,0 +1,163 @@
+/* ==========================================================================
+   Theme: Cyberpunk — near-black field, electric green signals, hard white
+   headings, dense monospaced records. Interference is static and local.
+   Tokens from docs/theme-prompts.md.
+   ========================================================================== */
+html[data-ui="cyberpunk"][data-theme] {
+  --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Mono', ui-monospace, Menlo, monospace;   /* reading is mono */
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --text-base: 0.8125rem;
+  --text-md: 0.875rem;
+
+  --bg-app: #020303;                /* ground */
+  --bg-sunken: #000000;
+  --surface: #090e0b;               /* plate */
+  --surface-raised: #0c130f;
+  --surface-hover: #0f1813;
+  --surface-active: #142219;
+  --surface-overlay: rgba(0, 0, 0, 0.78);
+  --border: #304c3b;                /* line */
+  --border-strong: #659579;         /* control-line */
+  --border-input: #659579;
+  --divider: #1b2a21;
+  --text: #f8fffa;                  /* ink */
+  --text-secondary: #d3dbd5;        /* ink-body */
+  --text-tertiary: #c2cbc5;         /* ink-muted */
+  --text-disabled: #5f7466;
+  --accent: #38ff8e;
+  --accent-hover: #7dffb5;
+  --accent-fg: #020303;
+  --accent-soft: rgba(56, 255, 142, 0.1);
+  --accent-text: #38ff8e;
+  --accent-glow: #38ff8e;
+  --interference: #ff65d8;
+  --registration: #65f8ff;
+
+  --success: #38ff8e; --success-soft: rgba(56, 255, 142, 0.12);
+  --warning: #ffe66b; --warning-soft: rgba(255, 230, 107, 0.12);
+  --danger: #ff65d8;  --danger-soft: rgba(255, 101, 216, 0.12);
+  --info: #65f8ff;    --info-soft: rgba(101, 248, 255, 0.12);
+
+  --radius-xs: 0; --radius-sm: 0; --radius-md: 0; --radius-lg: 0; --radius-xl: 0;
+  --shadow-xs: none; --shadow-sm: none;
+  --shadow-md: 0 0 0 1px #304c3b;
+  --shadow-lg: 0 0 0 1px #659579, 0 30px 60px -20px rgba(0, 0, 0, 0.95);
+  --well-hi: none;
+  --glass: #020303; --glass-strong: #050907; --glass-edge: 0 0 0 1px #304c3b;
+  --ink-hard: #000;
+  --bloom-1: transparent; --bloom-2: transparent;
+  --grain-opacity: 0;
+  --dur-fast: 0s;                   /* interaction is immediate */
+  --dur-press: 0s;
+  --skeleton: #0f1813; --skeleton-shine: #142219;
+  --clip: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  --clip-sm: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+
+html[data-ui="cyberpunk"] {
+  /* Faint static scanlines over the whole field — never animated */
+  & body::after {
+    opacity: 1;
+    mix-blend-mode: normal;
+    background-image: repeating-linear-gradient(0deg, rgba(56, 255, 142, 0.028) 0 1px, transparent 1px 3px);
+  }
+
+  /* Headings: semibold uppercase, tight; titles carry a static RGB offset */
+  & :is(h1, h2, h3, .t-title, .t-heading, .dialog-title, .brand-name) { text-transform: uppercase; letter-spacing: -0.01em; font-weight: 600; }
+  & .t-title { font-size: 1.75rem; letter-spacing: -0.02em; text-shadow: -1.5px 0 var(--registration), 1.5px 0 var(--interference); }
+  & .t-section, & .settings-row-label, & .field-label { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: 0.75rem; }
+
+  /* The green signal rail along the main content */
+  & .main-inner { position: relative; }
+  & .main-inner::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 28px;
+    bottom: 28px;
+    width: 1px;
+    background: linear-gradient(var(--accent), var(--accent)) top / 1px 64px no-repeat, #1b2a21;
+    pointer-events: none;
+  }
+  @media (max-width: 899px) { & .main-inner::before { left: 6px; } }
+
+  /* Sidebar: a ruled directory */
+  & .sidebar { background: var(--bg-app); border-right: 1px solid var(--border); }
+  & .nav-indicator { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+  & .nav-item { text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.04em; }
+  & .nav-item.is-active { color: var(--accent); }
+  & .nav-item.is-active svg { color: var(--accent); }
+  & .nav-count { border-radius: 0; background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+  & .nav-item.is-active .nav-count { background: var(--accent); color: var(--accent-fg); }
+
+  /* Plates: square, ruled, with one clipped corner */
+  & :is(.panel, .summary, .routine-card, .goal-card, .goal-stats, .settings-card, .onboarding, .auth-card, .cal-week) {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: none;
+    clip-path: var(--clip);
+  }
+  & .panel-header { border-bottom-color: var(--border); }
+  & .item-row + .item-row { border-top-color: var(--divider); }
+
+  /* Actions: compact uppercase mono; green primary with clipped opposite corners */
+  & .btn { border-radius: 0; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; font-family: var(--font-mono); font-weight: 600; transition: none; }
+  & :is(.btn-primary, .lockin-launch, .icon-btn-accent) {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border: none;
+    box-shadow: none;
+    clip-path: var(--clip-sm);
+  }
+  & .btn-secondary { background: transparent; border: 1px solid var(--border-strong); color: var(--text); box-shadow: none; }
+  & .btn-ghost { color: var(--text-secondary); }
+  @media (hover: hover) and (pointer: fine) {
+    /* Hover responds immediately through inversion or a brighter edge */
+    & :is(.btn-primary, .lockin-launch):hover:not(:disabled) { background: var(--text); color: #020303; }
+    & .btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: transparent; }
+  }
+  & :is(.btn, .lockin-launch):active:not(:disabled) { transform: translate(1px, 1px); transition: none; }
+  & :focus-visible { box-shadow: none; outline: 1px solid var(--accent); outline-offset: 3px; }
+  & .lockin-launch { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
+
+  /* "Up next": a green-edged record */
+  & .up-next { background: #06100a; border: 1px solid var(--accent); border-radius: 0; box-shadow: inset 3px 0 0 var(--accent); clip-path: var(--clip); }
+  & .up-next-label { color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono); }
+  & .up-next .routine-icon { background: transparent; box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+
+  /* Controls */
+  & .check { border-radius: 0; border: 1px solid var(--border-strong); background: #000; box-shadow: none; }
+  & .check.is-checked { background: var(--accent); border-color: var(--accent); color: #020303; box-shadow: 2px 2px 0 var(--interference); }
+  & .input, & .stepper, & .segmented, & .chip, & .chip-date { border-radius: 0; background: #000; box-shadow: none; }
+  & .input:focus { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
+  & .segmented-item { border-radius: 0; text-transform: uppercase; font-size: 0.6875rem; letter-spacing: 0.06em; }
+  & .segmented-item.is-selected { background: var(--accent); color: #020303; box-shadow: none; }
+  & .chip.is-selected { background: transparent; color: var(--accent); border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
+  & .item-tag { border-radius: 0; background: transparent; color: var(--registration); box-shadow: inset 0 0 0 1px rgba(101, 248, 255, 0.4); text-transform: uppercase; letter-spacing: 0.04em; }
+  & .routine-icon { border-radius: 0; background: #000; box-shadow: inset 0 0 0 1px var(--border); color: var(--accent); }
+  & .avatar { border-radius: 0; background: var(--accent); color: #020303; }
+  & .kbd { border-radius: 0; }
+  & .progress, & .progress-fill { border-radius: 0; }
+  & .progress-fill { background: var(--accent); box-shadow: 0 0 8px rgba(56, 255, 142, 0.5); }
+
+  /* Sequencer: square steps; done steps carry a small magenta registration offset */
+  & .sequence-step { border-radius: 0; }
+  & .sequence-day.is-done .sequence-step { box-shadow: 2px 2px 0 var(--interference); }
+  & .sequence-day.is-today .sequence-step { border-color: var(--accent); background: rgba(56, 255, 142, 0.08); }
+  & .sequence-day.is-missed .sequence-step { border-color: var(--interference); color: var(--interference); background: repeating-linear-gradient(135deg, transparent 0 3px, rgba(255, 101, 216, 0.18) 3px 4px); }
+
+  /* Floating layers: ruled, opaque, square */
+  & :is(.menu, .dialog, .command) { border-radius: 0; background: #050907; border: 1px solid var(--border-strong); box-shadow: 0 30px 60px -20px #000; clip-path: var(--clip); }
+  & .dialog-footer { border-radius: 0; }
+  & .toast { border-radius: 0; background: #050907; color: var(--text); box-shadow: 0 0 0 1px var(--accent), 0 20px 40px -10px #000; }
+  & .menu-item.is-active, & .command-item.is-active { background: var(--accent); color: #020303; border-radius: 0; }
+  & .menu-item.is-active .menu-item-icon, & .command-item.is-active svg { color: #020303; }
+
+  @media (max-width: 899px) {
+    & .topbar, & .tabbar { background: #020303; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; box-shadow: 0 0 0 1px var(--border); }
+    & .tab { text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+    & .tab.is-active { color: var(--accent); }
+    & .tab.is-active .tab-icon { background: transparent; box-shadow: inset 0 -2px 0 var(--accent); border-radius: 0; }
+  }
+}

@@ -33,9 +33,12 @@ function Splash() {
 function AppearanceController() {
   const { isAuthenticated } = useAuth();
   const { state } = useApp();
+  // Signed out (landing, sign-in) always shows the default theme; its light/dark
+  // toggle is remembered on this device.
   useAppearance(
     isAuthenticated ? state.settings?.theme : undefined,
     isAuthenticated ? state.settings?.accentColor : undefined,
+    isAuthenticated ? state.settings?.uiTheme : 'standard',
   );
   return null;
 }

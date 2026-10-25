@@ -161,7 +161,7 @@ export function ProgressRing({ value, max = 1, size = 44, stroke = 4, label, chi
 /* --------------------------------------------------------------------------
    Segmented control (single choice). Arrow keys move the selection.
    -------------------------------------------------------------------------- */
-export function Segmented({ value, onChange, options, label, size = 'md' }) {
+export function Segmented({ value, onChange, options, label, size = 'md', disabled = false }) {
   const refs = useRef([]);
   const onKeyDown = (e, i) => {
     let next = null;
@@ -173,7 +173,7 @@ export function Segmented({ value, onChange, options, label, size = 'md' }) {
     refs.current[next]?.focus();
   };
   return (
-    <div className={`segmented segmented-${size}`} role="radiogroup" aria-label={label}>
+    <div className={`segmented segmented-${size} ${disabled ? 'is-disabled' : ''}`} role="radiogroup" aria-label={label} aria-disabled={disabled || undefined}>
       {options.map((opt, i) => {
         const selected = opt.value === value;
         const Icon = opt.icon;
@@ -185,6 +185,7 @@ export function Segmented({ value, onChange, options, label, size = 'md' }) {
             role="radio"
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
+            disabled={disabled}
             className={`segmented-item ${selected ? 'is-selected' : ''}`}
             onClick={() => onChange(opt.value)}
             onKeyDown={(e) => onKeyDown(e, i)}

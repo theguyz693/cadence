@@ -1,0 +1,140 @@
+/* ==========================================================================
+   Theme: Organic — a shared worktable of sand paper, irregular shapes, dark
+   brown type, moss and fired clay. Serif statements over a calm sans.
+   Tokens from docs/theme-prompts.md.
+   ========================================================================== */
+html[data-ui="organic"][data-theme] {
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Source Serif 4', Georgia, serif;          /* large serif numbers */
+  --text-base: 0.9375rem;
+  --leading-normal: 1.6;
+
+  --bg-app: #eee6d6;                 /* sand */
+  --bg-sunken: #ddd5c3;              /* stone */
+  --surface: #f5eddf;                /* paper */
+  --surface-raised: #f8f1e5;
+  --surface-hover: #efe6d5;
+  --surface-active: #e7dcc8;
+  --surface-overlay: rgba(41, 37, 29, 0.3);
+  --border: rgba(41, 37, 29, 0.12);
+  --border-strong: rgba(41, 37, 29, 0.22);
+  --border-input: rgba(41, 37, 29, 0.24);
+  --divider: rgba(41, 37, 29, 0.09);
+  --text: #29251d;                   /* ink */
+  --text-secondary: #443b2f;         /* ink-muted */
+  --text-tertiary: #5c5243;
+  --text-disabled: #a39a87;
+  --accent: #35422d;                 /* moss */
+  --accent-hover: #2b3624;
+  --accent-fg: #f5eddf;
+  --accent-soft: rgba(53, 66, 45, 0.12);
+  --accent-text: #35422d;
+  --accent-glow: #ad7d62;            /* terracotta embers */
+  --field: #694737;                  /* fired clay */
+  --art-accent: #ad7d62;
+  --highlight: #b9b28b;              /* dried grass */
+
+  --success: #35422d; --success-soft: rgba(53, 66, 45, 0.14);
+  --warning: #8a5a1d; --warning-soft: rgba(185, 178, 139, 0.35);
+  --danger: #8f3b25;  --danger-soft: rgba(173, 125, 98, 0.22);
+  --info: #4b5a6a;    --info-soft: rgba(75, 90, 106, 0.12);
+
+  --radius-xs: 6px 4px 7px 5px;
+  --radius-sm: 12px 8px 14px 9px / 10px 13px 9px 12px;
+  --radius-md: 27px 19px 29px 16px / 22px 26px 19px 29px;   /* control */
+  --radius-lg: 34px 22px 40px 20px / 26px 38px 22px 34px;
+  --radius-xl: 44px 28px 52px 26px / 34px 48px 28px 42px;
+  --shadow-xs: none;
+  --shadow-sm: 0 1px 0 rgba(41, 37, 29, 0.06);
+  --shadow-md: 0 8px 18px -10px rgba(41, 37, 29, 0.28);
+  --shadow-lg: 0 18px 36px -16px rgba(41, 37, 29, 0.35);
+  --well-hi: none;
+  --glass: #eee6d6; --glass-strong: #f5eddf; --glass-edge: none;
+  --ink-hard: #29251d;
+  --bloom-1: transparent; --bloom-2: transparent;
+  --grain-opacity: 0.07;             /* a faint continuous paper grain */
+  --ease-out: ease;
+  --dur-fast: 240ms;
+  --skeleton: #e3d9c6; --skeleton-shine: #efe6d6;
+}
+
+html[data-ui="organic"] {
+  & body::after { mix-blend-mode: multiply; }
+  & :is(h1, h2, h3, .t-title, .t-heading, .dialog-title, .brand-name) { font-weight: 500; letter-spacing: -0.02em; }
+  & .t-title { font-size: 2rem; line-height: 1.05; }
+  & .t-section { font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
+  & .t-fig, & .summary-stats dd, & .goal-stat-value { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.02em; }
+
+  /* Sidebar: a sheet of paper laid on the sand */
+  & .sidebar { background: var(--surface); border-right: none; box-shadow: 1px 0 0 var(--border); }
+  & .nav-indicator { background: var(--bg-sunken); border-radius: var(--radius-md); }
+  & .nav-item.is-active svg { color: var(--accent); }
+  & .nav-item.is-active .nav-count { background: var(--accent); color: var(--accent-fg); }
+
+  /* Sheets: paper with irregular, calm edges; each kind gets its own silhouette */
+  & :is(.panel, .settings-card, .cal-week, .auth-card) { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: none; }
+  & .routine-card { background: var(--surface); border: 1px solid var(--border); border-radius: 40px 24px 34px 22px / 28px 40px 24px 36px; box-shadow: none; }
+  & .goal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px 40px 22px 36px / 36px 24px 40px 26px; box-shadow: none; }
+  & .summary { background: var(--bg-sunken); border: none; border-radius: var(--radius-xl); box-shadow: none; }
+  & .goal-stats { background: var(--bg-sunken); border: none; border-radius: var(--radius-lg); box-shadow: none; }
+  & .onboarding { background: var(--field); color: #f5eddf; border: none; border-radius: var(--radius-xl); --text: #f5eddf; --text-secondary: #ead9c8; --text-tertiary: #e0ccb8; }
+  & .panel-header { border-bottom-color: var(--divider); }
+
+  /* "Up next": a moss basin, light text, a slight rotation of the sheet */
+  & .up-next { background: var(--accent); color: #f5eddf; border: none; border-radius: var(--radius-xl); box-shadow: none; transform: rotate(-0.35deg); }
+  & .up-next .t-meta, & .up-next-label { color: #dfe3cf; }
+  & .up-next .routine-icon { background: rgba(245, 237, 223, 0.16); color: #f5eddf; }
+  & .up-next .btn-primary { background: #f5eddf; color: var(--accent); }
+  & .up-next .btn-ghost { color: #e8ecd9; }
+  @media (max-width: 700px) { & .up-next { transform: none; } }
+
+  /* Buttons: softly rounded solid moss; press compresses slightly */
+  & .btn { border-radius: var(--radius-md); font-weight: 600; }
+  & :is(.btn-primary, .lockin-launch, .icon-btn-accent) { background: var(--accent); color: var(--accent-fg); border: none; box-shadow: none; transition: background-color var(--dur-fast) ease, transform var(--dur-fast) ease; }
+  & .btn-secondary { background: transparent; border: 1.5px solid var(--border-strong); box-shadow: none; }
+  @media (hover: hover) and (pointer: fine) {
+    & :is(.btn-primary, .lockin-launch):hover:not(:disabled) { background: var(--accent-hover); transform: none; box-shadow: none; }
+    & .btn-secondary:hover:not(:disabled) { background: var(--surface); }
+  }
+  & :is(.btn, .lockin-launch):active:not(:disabled) { transform: scale(0.97); box-shadow: none; }
+  & .lockin-launch { border-radius: var(--radius-md); height: 40px; }
+  & .lockin-launch .kbd { background: transparent; border-color: currentColor; color: inherit; opacity: 0.6; }
+
+  /* Controls */
+  & .check { border: 1.5px solid #6b604f; background: var(--surface); box-shadow: none; border-radius: 48% 52% 46% 54% / 52% 46% 54% 48%; }
+  & .check.is-checked { background: var(--accent); border-color: var(--accent); color: #f5eddf; }
+  & .check-square { border-radius: 7px 5px 8px 4px; }
+  & .input, & .stepper, & .chip-date { background: #faf4ea; border-color: var(--border-input); border-radius: var(--radius-sm); box-shadow: none; }
+  & .segmented { background: var(--bg-sunken); border: none; border-radius: var(--radius-md); }
+  & .segmented-item { border-radius: var(--radius-md); }
+  & .segmented-item.is-selected { background: var(--surface); box-shadow: none; }
+  & .chip { border-radius: var(--radius-md); background: transparent; }
+  & .chip.is-selected { background: var(--highlight); color: var(--text); border-color: transparent; }
+  & .item-tag { background: rgba(173, 125, 98, 0.18); color: #6f3f2a; border-radius: 8px 5px 9px 6px; }
+  & .routine-icon { border-radius: 45% 55% 52% 48% / 50% 45% 55% 50%; background: var(--bg-sunken); color: var(--accent); box-shadow: none; }
+  & .avatar { background: var(--art-accent); color: #f5eddf; border: none; }
+  & .progress { background: var(--bg-sunken); }
+  & .progress-fill { background: var(--accent); }
+  & .kbd { background: var(--surface); }
+
+  /* Sequencer: pebbles */
+  & .sequence-step { border-radius: 46% 54% 50% 50% / 52% 48% 52% 48%; }
+  & .sequence-day.is-today .sequence-step { border-color: var(--art-accent); background: rgba(173, 125, 98, 0.15); }
+  & .sequence-day.is-missed .sequence-step { border-color: rgba(143, 59, 37, 0.4); color: #8f3b25; background: rgba(173, 125, 98, 0.12); }
+
+  /* Floating layers: paper, no glass */
+  & :is(.menu, .command) { background: var(--surface); border: 1px solid var(--border); border-radius: 20px 14px 22px 12px; box-shadow: var(--shadow-lg); }
+  & .dialog { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+  & .dialog-footer { background: transparent; border-radius: 0; }
+  & .menu-item.is-active, & .command-item.is-active { background: var(--bg-sunken); }
+  & .toast { background: var(--field); color: #f5eddf; border-radius: 22px 14px 24px 12px; }
+  & .demo-banner, & .offline-banner { background: var(--highlight); border: none; border-radius: var(--radius-lg); }
+
+  @media (max-width: 899px) {
+    & .topbar, & .tabbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    & .tabbar { border-radius: 30px 22px 34px 20px / 24px 32px 20px 30px; box-shadow: var(--shadow-lg); }
+    & .tab.is-active { color: var(--accent); }
+    & .tab.is-active .tab-icon { background: var(--bg-sunken); }
+  }
+}

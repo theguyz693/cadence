@@ -19,6 +19,7 @@ const defaultData = () => ({
   completions: {},   // { [routineId]: { [dateStr]: true } }
   settings: {
     theme: 'system',
+    uiTheme: 'standard',
     accentColor: 'ember',
     showBanner: false,
     bannerUrl: 'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif',
