@@ -3,6 +3,7 @@ import { useLockIn } from '../context/LockInContext.jsx';
 import { formatTimerDisplay } from '../utils/lockInStorage.js';
 import {
   Play,
+  Lock,
   Pause,
   Square,
   Check,
@@ -14,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import LockInMusicPlayer from './LockInMusicPlayer.jsx';
+import { RollingNumber } from './ui/primitives.jsx';
 import Logo from './Logo.jsx';
 
 export default function LockInScreen() {
@@ -126,7 +128,9 @@ export default function LockInScreen() {
 
       <div className="focus-center">
         <div className="focus-status" aria-live="polite">
-          <span className={`focus-status-dot ${isRunning ? 'is-running' : ''}`} aria-hidden="true" />
+          {isBreak || isCompleted
+            ? <Coffee size={13} strokeWidth={2} aria-hidden="true" />
+            : <Lock size={13} strokeWidth={2.2} aria-hidden="true" className={isRunning ? 'is-running' : ''} />}
           {statusText}
         </div>
 
@@ -134,6 +138,21 @@ export default function LockInScreen() {
 
         <div className="focus-timer">
           <svg viewBox="0 0 320 320" aria-hidden="true">
+            <defs>
+              <linearGradient id="focus-ember" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="var(--ring)" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="var(--ring)" />
+              </linearGradient>
+              <filter id="focus-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="5" />
+              </filter>
+            </defs>
+            {/* tick marks: one per minute of the session, like an instrument dial */}
+            <g className="focus-ticks">
+              {Array.from({ length: 60 }, (_, i) => (
+                <line key={i} x1="160" y1="8" x2="160" y2={i % 5 === 0 ? 17 : 13} transform={`rotate(${i * 6} 160 160)`} />
+              ))}
+            </g>
             <circle className="focus-ring-track" cx="160" cy="160" r={radius} strokeWidth="3" fill="none" />
             <circle
               className="focus-ring-fill"
@@ -146,11 +165,19 @@ export default function LockInScreen() {
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
               transform="rotate(-90 160 160)"
+              stroke="url(#focus-ember)"
             />
+            {/* The comet: a glowing head riding the end of the arc */}
+            {progressRatio > 0.002 && !isCompleted && (
+              <g className="focus-comet" style={{ transform: `rotate(${progressRatio * 360}deg)` }}>
+                <circle cx="160" cy={160 - radius} r="9" className="focus-comet-glow" filter="url(#focus-glow)" />
+                <circle cx="160" cy={160 - radius} r="4.5" className="focus-comet-head" />
+              </g>
+            )}
           </svg>
           <div className="focus-time">
             <div className="focus-countdown t-num" role="timer" aria-label={`${Math.floor(remainingSec / 60)} minutes ${remainingSec % 60} seconds remaining`}>
-              {formatTimerDisplay(remainingSec)}
+              <RollingNumber value={formatTimerDisplay(remainingSec)} />
             </div>
             {!isCompleted && (
               <div className="focus-meta t-num">

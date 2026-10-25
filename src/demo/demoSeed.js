@@ -188,7 +188,8 @@ export function createDemoData() {
 
   const settings = {
     theme: 'system',
-    accentColor: 'cobalt',
+    uiTheme: 'standard',
+    accentColor: 'ember',
     showBanner: false,
     bgBlur: 25,
     bgDim: 60,

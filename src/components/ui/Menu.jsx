@@ -41,10 +41,12 @@ export default function Menu({ trigger, items, align = 'end', label, width = 200
     const mh = m?.offsetHeight || 200;
     const mw = m?.offsetWidth || width;
     const spaceBelow = window.innerHeight - r.bottom;
-    const top = spaceBelow < mh + 12 && r.top > mh + 12 ? r.top - mh - 6 : r.bottom + 6;
+    const flipUp = spaceBelow < mh + 12 && r.top > mh + 12;
+    const top = flipUp ? r.top - mh - 6 : r.bottom + 6;
     let left = align === 'end' ? r.right - mw : r.left;
     left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
-    setPos({ top, left });
+    // The menu scales out of the corner nearest its trigger.
+    setPos({ top, left, origin: `${flipUp ? 'bottom' : 'top'} ${align === 'end' ? 'right' : 'left'}` });
   }, [align, width]);
 
   useLayoutEffect(() => {
@@ -123,7 +125,7 @@ export default function Menu({ trigger, items, align = 'end', label, width = 200
           aria-label={label}
           tabIndex={-1}
           className="menu"
-          style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, minWidth: width }}
+          style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, minWidth: width, '--menu-origin': pos?.origin }}
           onKeyDown={onMenuKeyDown}
           aria-activedescendant={activeIndex >= 0 ? `${menuId}-${activeIndex}` : undefined}
         >

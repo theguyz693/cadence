@@ -9,6 +9,8 @@ import { PageHeader, Segmented, Field, IconButton, Kbd } from '../components/ui/
 import { ACCENT_THEMES, resolveAccent } from '../utils/helpers.js';
 import { MOD_KEY } from '../components/Layout.jsx';
 import CalendarSettings from '../components/CalendarSettings.jsx';
+import { revealTheme, revealAppearance } from '../utils/themeReveal.js';
+import { UI_THEMES, resolveUiTheme } from '../utils/uiThemes.js';
 
 const DEFAULT_FOCUS_SOUNDS = [
   { id: 'sound_1', name: 'Deep Focus Ambient', src: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', type: 'preset', isDefault: true },
@@ -61,6 +63,8 @@ export default function Settings() {
   const settings = state.settings || {};
   const theme = settings.theme === 'light' || settings.theme === 'dark' ? settings.theme : 'system';
   const accent = resolveAccent(settings.accentColor);
+  const uiTheme = resolveUiTheme(settings.uiTheme);
+  const singleMode = UI_THEMES[uiTheme].modes.length === 1;
   const ambientOn = settings.showBanner === true;
   const bgBlur = settings.bgBlur ?? 25;
   const bgDim = settings.bgDim ?? 60;
@@ -179,7 +183,12 @@ export default function Settings() {
               </button>
             </Row>
           ) : (
-            <Row label={user?.username || 'Account'} description="Signed in. Your data syncs to this account across devices.">
+            <Row
+              label={user?.name || user?.username || 'Account'}
+              description={user?.provider === 'google'
+                ? `Signed in with Google${user.email ? ` as ${user.email}` : ''}. Your data syncs across devices.`
+                : 'Signed in. Your data syncs to this account across devices.'}
+            >
               <button type="button" className="btn btn-secondary btn-sm" onClick={handleLogout}>
                 <LogOut size={14} strokeWidth={1.75} /> Sign out
               </button>
@@ -188,11 +197,52 @@ export default function Settings() {
         </Section>
 
         <Section id="s-appearance" title="Appearance">
-          <Row label="Theme" description="Match your device, or choose light or dark.">
+          <div className="settings-row is-stacked">
+            <div>
+              <div className="settings-row-label" id="theme-picker-label">Theme</div>
+              <div className="settings-row-desc">The whole look of Cadence. Your data and layout stay the same.</div>
+            </div>
+            <div className="theme-picker" role="radiogroup" aria-labelledby="theme-picker-label">
+              {Object.entries(UI_THEMES).map(([key, t]) => {
+                const mode = t.modes.length === 1 ? t.modes[0] : (document.documentElement.dataset.theme === 'dark' && t.modes.includes('dark') ? 'dark' : t.modes[0]);
+                const [ground, surface, accentColor, ink] = t.preview[mode] || t.preview[t.modes[0]];
+                const selected = uiTheme === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    className={`theme-card ${selected ? 'is-selected' : ''}`}
+                    onClick={(e) => revealAppearance({ ui: key }, () => updateSettings({ uiTheme: key }), e.currentTarget)}
+                  >
+                    <span className="theme-card-art" style={{ '--g': ground, '--s': surface, '--a': accentColor, '--i': ink }} aria-hidden="true">
+                      <span className="tc-side" />
+                      <span className="tc-main">
+                        <span className="tc-line" />
+                        <span className="tc-card"><span className="tc-dot" /><span className="tc-bar" /></span>
+                        <span className="tc-btn" />
+                      </span>
+                    </span>
+                    <span className="theme-card-text">
+                      <span className="theme-card-name">{t.name}{key === 'standard' && <span className="theme-card-badge">Default</span>}</span>
+                      <span className="theme-card-desc">{t.description}</span>
+                    </span>
+                    {selected && <span className="theme-card-check" aria-hidden="true"><Check size={12} strokeWidth={3} /></span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <Row
+            label="Light or dark"
+            description={singleMode ? `${UI_THEMES[uiTheme].name} has one look of its own.` : 'Match your device, or choose light or dark.'}
+          >
             <Segmented
-              label="Theme"
-              value={theme}
-              onChange={(v) => updateSettings({ theme: v })}
+              label="Light or dark"
+              disabled={singleMode}
+              value={singleMode ? UI_THEMES[uiTheme].modes[0] : theme}
+              onChange={(v) => revealTheme(v, () => updateSettings({ theme: v }), document.activeElement)}
               options={[
                 { value: 'light', label: 'Light', icon: SunMedium },
                 { value: 'dark', label: 'Dark', icon: MoonStar },
@@ -200,6 +250,7 @@ export default function Settings() {
               ]}
             />
           </Row>
+          {UI_THEMES[uiTheme].accents && (
           <Row label="Accent color" description="Used for buttons, progress and the current day.">
             <div className="swatches" role="radiogroup" aria-label="Accent color">
               {Object.entries(ACCENT_THEMES).map(([key, a]) => (
@@ -219,6 +270,7 @@ export default function Settings() {
               ))}
             </div>
           </Row>
+          )}
           <Row label="Ambient background" description="An animated scene behind the app. Off keeps things calm and fast.">
             <Switch checked={ambientOn} onChange={(v) => updateSettings({ showBanner: v })} label="Ambient background" />
           </Row>

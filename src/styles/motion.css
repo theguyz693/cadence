@@ -1,0 +1,267 @@
+/* ==========================================================================
+   Hearth motion — budgeted by how often each thing is seen
+     Rare (completion, streaks, theme switch, first visit) → the delight lives here
+     Tens a day (hover, nav, rows)                         → small and quick
+     Keyboard (⌘K, shortcuts)                              → no animation at all
+   transform / opacity / clip-path only. Every block is inside
+   prefers-reduced-motion: no-preference, so the reduced state is the end state.
+   ========================================================================== */
+
+/* The command menu opens with no animation: it is keyboard-driven. */
+.command { animation: none; }
+.command-backdrop { animation: none; }
+
+.nav-indicator { transition: transform var(--dur-slow) var(--ease-in-out), opacity var(--dur-fast) ease; }
+
+@media (prefers-reduced-motion: no-preference) {
+
+  /* -------------------------------------------------------------------------
+     Animated icons — each icon does the thing it depicts
+     ------------------------------------------------------------------------- */
+  .lucide { overflow: visible; }
+  .lucide-sun path, .lucide-sun circle,
+  .lucide-settings, .lucide-repeat, .lucide-plus, .lucide-search circle,
+  .lucide-timer line:nth-of-type(2), .lucide-lock path,
+  .lucide-target circle, .lucide-calendar-days path,
+  .lucide-square-check-big path:nth-of-type(2), .lucide-flame, .lucide-sparkles path {
+    transform-box: view-box;
+    transition: transform 520ms var(--ease-out);
+  }
+  .lucide-sun path { transform-origin: 12px 12px; }
+  .lucide-sun circle { transform-origin: 12px 12px; transition-duration: 380ms; }
+  .lucide-settings { transform-origin: 50% 50%; transition-duration: 700ms; transition-timing-function: var(--ease-in-out); }
+  .lucide-repeat { transform-origin: 50% 50%; transition-duration: 600ms; transition-timing-function: var(--ease-in-out); }
+  .lucide-plus { transform-origin: 50% 50%; transition-duration: 300ms; }
+  .lucide-search circle { transform-origin: 11px 11px; }
+  .lucide-timer line:nth-of-type(2) { transform-origin: 12px 14px; transition-duration: 900ms; transition-timing-function: var(--ease-in-out); }
+  .lucide-lock path { transition-duration: 260ms; }
+  .lucide-target circle { transform-origin: 12px 12px; }
+  .lucide-square-check-big path:nth-of-type(2) { stroke-dasharray: 22; stroke-dashoffset: 0; transition: stroke-dashoffset 0ms; }
+
+  @media (hover: hover) and (pointer: fine) {
+    :is(.nav-item, .tab, .icon-btn, .btn, .sidebar-search, .preview-nav):hover .lucide-sun path { transform: rotate(45deg); }
+    :is(.nav-item, .tab, .icon-btn, .btn):hover .lucide-sun circle { transform: scale(0.82); }
+    :is(.nav-item, .tab, .icon-btn, .btn):hover .lucide-settings { transform: rotate(90deg); }
+    :is(.nav-item, .tab, .icon-btn, .btn):hover .lucide-repeat { transform: rotate(180deg); }
+    :is(.nav-item, .tab, .icon-btn, .btn, .account-btn):hover .lucide-plus { transform: rotate(90deg); }
+    :is(.sidebar-search, .icon-btn, .tab):hover .lucide-search circle { transform: scale(1.12); }
+    :is(.nav-item, .tab, .icon-btn, .btn):hover .lucide-timer line:nth-of-type(2) { transform: rotate(360deg); }
+    :is(.lockin-launch, .icon-btn, .btn, .tab):hover .lucide-lock path { transform: translateY(-2.5px); }
+    :is(.nav-item, .tab, .icon-btn, .btn, .goal-card):hover .lucide-target circle:nth-of-type(3) { animation: target-hit 520ms var(--ease-out); }
+    :is(.nav-item, .tab, .icon-btn, .btn, .goal-card):hover .lucide-target circle:nth-of-type(2) { animation: target-hit 520ms var(--ease-out) 60ms; }
+    :is(.nav-item, .tab, .icon-btn, .btn, .panel-link):hover .lucide-calendar-days path:nth-of-type(n+4) { animation: dot-pop 420ms var(--ease-out) both; }
+    :is(.nav-item, .tab, .icon-btn, .btn, .panel-link):hover .lucide-calendar-days path:nth-of-type(5) { animation-delay: 40ms; }
+    :is(.nav-item, .tab, .icon-btn, .btn, .panel-link):hover .lucide-calendar-days path:nth-of-type(6) { animation-delay: 80ms; }
+    :is(.nav-item, .tab, .icon-btn, .btn, .panel-link):hover .lucide-calendar-days path:nth-of-type(7) { animation-delay: 120ms; }
+    :is(.nav-item, .tab, .icon-btn, .btn, .panel-link):hover .lucide-calendar-days path:nth-of-type(8) { animation-delay: 160ms; }
+    :is(.nav-item, .tab, .icon-btn, .btn, .panel-link):hover .lucide-calendar-days path:nth-of-type(9) { animation-delay: 200ms; }
+    :is(.nav-item, .tab, .icon-btn, .btn):hover .lucide-square-check-big path:nth-of-type(2) { animation: draw-check 420ms var(--ease-out); }
+    .streak:hover .lucide-flame { animation: flicker 600ms var(--ease-out); transform-origin: 50% 90%; }
+    :is(.btn, .onboarding-badge, .smart-add):hover .lucide-sparkles path:first-child { transform: rotate(18deg) scale(1.08); transform-origin: 12px 12px; }
+  }
+
+  /* An icon plays its move once when its nav row becomes active */
+  .nav-item.is-active .lucide-sun path,
+  .tab.is-active .lucide-sun path { animation: sun-turn 700ms var(--ease-out); transform-origin: 12px 12px; }
+  .nav-item.is-active .lucide-repeat,
+  .tab.is-active .lucide-repeat { animation: spin-half 650ms var(--ease-in-out); transform-origin: 50% 50%; }
+  .nav-item.is-active .lucide-settings,
+  .tab.is-active .lucide-settings { animation: spin-quarter 700ms var(--ease-in-out); transform-origin: 50% 50%; }
+  .nav-item.is-active .lucide-square-check-big path:nth-of-type(2),
+  .tab.is-active .lucide-square-check-big path:nth-of-type(2) { animation: draw-check 460ms var(--ease-out) 80ms both; }
+  .nav-item.is-active .lucide-target circle:nth-of-type(3),
+  .tab.is-active .lucide-target circle:nth-of-type(3) { animation: target-hit 560ms var(--ease-out); transform-origin: 12px 12px; }
+  .nav-item.is-active .lucide-calendar-days path:nth-of-type(n+4),
+  .tab.is-active .lucide-calendar-days path:nth-of-type(n+4) { animation: dot-pop 420ms var(--ease-out) both; }
+
+  /* -------------------------------------------------------------------------
+     Completion: the check draws, the box pops, embers fly (see CheckButton)
+     ------------------------------------------------------------------------- */
+  .check { position: relative; }
+  .check.is-checked { animation: check-slam 360ms var(--ease-out); }
+  .check .burst { position: absolute; inset: 50% auto auto 50%; width: 0; height: 0; pointer-events: none; }
+  .check .burst i {
+    position: absolute;
+    left: -2.5px;
+    top: -2.5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 2px;
+    background: var(--accent-glow);
+    animation: ember-fly 620ms var(--ease-out) forwards;
+    transform: rotate(var(--a)) translateX(0) scale(1);
+  }
+  .check .burst i:nth-child(odd) { width: 3px; height: 8px; left: -1.5px; top: -4px; border-radius: 2px; }
+  .check .burst::after {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: -14px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-glow);
+    animation: shock 520ms var(--ease-out) forwards;
+  }
+
+  /* The strike draws across the title instead of appearing */
+  /* The title hugs its text so the strike spans only the words */
+  .item-row .item-title { position: relative; display: inline-flex; align-self: flex-start; max-width: 100%; }
+  .item-row .item-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 52%;
+    height: 1.5px;
+    border-radius: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 360ms var(--ease-out) 60ms;
+    pointer-events: none;
+  }
+  .item-row.is-done .item-title { text-decoration: none; }
+  .item-row.is-done .item-title::after { transform: scaleX(1); }
+
+  /* A just-completed row warms up for as long as its sparks fly */
+  .item-row:has(.check .burst) { animation: row-warm 900ms var(--ease-out); }
+
+  /* -------------------------------------------------------------------------
+     The sequencer: steps fill like liquid; the track lights up once
+     ------------------------------------------------------------------------- */
+  .sequence-step { overflow: hidden; isolation: isolate; }
+  .sequence-step::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background: var(--accent);
+    transform: translateY(101%);
+    transition: transform 460ms var(--ease-out);
+  }
+  .sequence-step::after { /* the meniscus: a lighter lip riding the fill */
+    content: '';
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    height: 6px;
+    top: 100%;
+    z-index: -1;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--accent-glow) 70%, white);
+    opacity: 0;
+    transition: transform 460ms var(--ease-out), opacity 460ms ease;
+  }
+  .sequence-day.is-done .sequence-step { background: transparent; }
+  .sequence-day.is-done .sequence-step::before { transform: translateY(0); }
+  .sequence-day.is-done .sequence-step::after { transform: translateY(-110%); opacity: 0; animation: meniscus 520ms var(--ease-out); }
+  .sequence-day .sequence-step svg { animation: none; }
+  .sequence-day.is-done .sequence-step svg { animation: check-in 300ms var(--ease-out) 200ms both; }
+
+  /* Track lights once on mount, from day one to today */
+  .sequence:not(.sequence-compact) .sequence-track::before { animation: track-light 900ms var(--ease-expo) both; transform-origin: left center; }
+
+  /* Today's step: a soft ember halo that rises once, then settles */
+  .sequence-day.is-today .sequence-step { animation: today-rise 700ms var(--ease-out) 300ms both; }
+
+  /* -------------------------------------------------------------------------
+     Arrivals (once per visit, short, staggered 40ms)
+     ------------------------------------------------------------------------- */
+  .main-inner { animation: none; }
+  .page > * { animation: rise-soft 420ms var(--ease-out) both; }
+  .page > :nth-child(2) { animation-delay: 40ms; }
+  .page > :nth-child(3) { animation-delay: 80ms; }
+  .page > :nth-child(4) { animation-delay: 120ms; }
+  .page > :nth-child(5) { animation-delay: 160ms; }
+  .page > :nth-child(n+6) { animation-delay: 200ms; }
+  .today-grid > * > * { animation: rise-soft 420ms var(--ease-out) both; }
+  .today-primary > :nth-child(2), .today-secondary > :nth-child(2) { animation-delay: 60ms; }
+  .today-primary > :nth-child(3), .today-secondary > :nth-child(3) { animation-delay: 120ms; }
+
+  /* The "Up next" swaps its item with a blur crossfade */
+  .up-next-body { animation: blur-in 340ms var(--ease-out); }
+
+  /* Rolling digits (see RollingNumber) */
+  .roll-strip { transition: transform 700ms var(--ease-expo); }
+
+  /* Toasts arrive from below and the icon draws */
+  .toast { animation: toast-rise 380ms var(--ease-drawer); }
+  .toast[data-state="closed"] { animation: toast-fall 200ms var(--ease-out) forwards; }
+  .toast-icon { animation: icon-pop 420ms var(--ease-out) 80ms both; }
+
+  /* Menus scale out of their trigger */
+  .menu { transform-origin: var(--menu-origin, top right); animation: menu-in 180ms var(--ease-out); }
+
+  /* Skeletons breathe instead of sweeping */
+  .skeleton { animation: shimmer 1.6s linear infinite; }
+
+  /* Lock In: the shackle snaps shut as the session starts */
+  .focus-status .lucide-lock path { animation: shackle-close 520ms var(--ease-out) 200ms both; }
+  .focus-timer { animation: timer-in 700ms var(--ease-expo) both; }
+}
+
+/* ---------------------------------------------------------------------------
+   Theme switch: the new theme spreads from where you clicked (View Transitions)
+   --------------------------------------------------------------------------- */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html[data-vt="theme"]::view-transition-new(root) { z-index: 1; }
+
+/* ---------------------------------------------------------------------------
+   Keyframes
+   --------------------------------------------------------------------------- */
+@keyframes sun-turn { from { transform: rotate(-45deg); } to { transform: rotate(0); } }
+@keyframes spin-half { from { transform: rotate(-180deg); } to { transform: rotate(0); } }
+@keyframes spin-quarter { from { transform: rotate(-90deg); } to { transform: rotate(0); } }
+@keyframes target-hit { 0% { transform: scale(1); } 35% { transform: scale(0.55); } 70% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes dot-pop { 0% { transform: translateY(0); } 40% { transform: translateY(-2px); } 100% { transform: translateY(0); } }
+@keyframes draw-check { from { stroke-dashoffset: 22; } to { stroke-dashoffset: 0; } }
+@keyframes flicker { 0%, 100% { transform: scale(1) rotate(0); } 30% { transform: scale(1.12, 0.94) rotate(-4deg); } 60% { transform: scale(0.96, 1.08) rotate(3deg); } }
+@keyframes check-slam { 0% { transform: scale(1); } 30% { transform: scale(0.84); } 65% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes ember-fly {
+  0% { opacity: 1; transform: rotate(var(--a)) translateX(4px) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d, 22px)) scale(0.3); }
+}
+@keyframes shock { from { opacity: 0.8; transform: scale(0.4); } to { opacity: 0; transform: scale(1.5); } }
+@keyframes row-warm {
+  0% { background-color: color-mix(in oklab, var(--accent) 16%, transparent); }
+  100% { background-color: transparent; }
+}
+@keyframes meniscus { 0% { opacity: 0.9; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-560%); } }
+@keyframes check-in { from { opacity: 0; transform: scale(0.6) rotate(-12deg); } to { opacity: 1; transform: none; } }
+@keyframes track-light { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 0.35; } }
+@keyframes today-rise {
+  0% { transform: translateY(0); box-shadow: 0 0 0 0 transparent; }
+  45% { transform: translateY(-3px); box-shadow: 0 8px 18px -6px color-mix(in oklab, var(--accent) 60%, transparent); }
+  100% { transform: translateY(0); box-shadow: 0 4px 12px -6px color-mix(in oklab, var(--accent) 45%, transparent); }
+}
+@keyframes rise-soft { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes blur-in { from { opacity: 0; filter: blur(4px); transform: translateY(3px); } to { opacity: 1; filter: blur(0); transform: none; } }
+@keyframes toast-rise { from { opacity: 0; transform: translateY(100%) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes toast-fall { to { opacity: 0; transform: translateY(40%) scale(0.98); } }
+@keyframes icon-pop { from { opacity: 0; transform: scale(0.5) rotate(-20deg); } to { opacity: 1; transform: none; } }
+@keyframes menu-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes shackle-close { 0% { transform: translateY(-4px); } 70% { transform: translateY(0.6px); } 100% { transform: translateY(0); } }
+@keyframes timer-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+
+/* RollingNumber structure (motion lives in the reduced-motion block above) */
+.roll { display: inline-flex; }
+.roll-digits { display: inline-flex; line-height: 1; }
+.roll-col { display: inline-block; height: 1em; overflow: hidden; }
+.roll-strip { display: flex; flex-direction: column; }
+.roll-strip > span { height: 1em; line-height: 1; text-align: center; }
+
+/* Small arrivals: the time-of-day glyph, the logo's shackle */
+.today-date { display: inline-flex; align-items: center; gap: 6px; }
+.sky-icon { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .sky-icon { animation: sky-rise 900ms var(--ease-expo) 150ms both; }
+  .logo .logo-shackle { transition: transform 300ms var(--ease-out); }
+  @media (hover: hover) and (pointer: fine) {
+    .brand:hover .logo-shackle { transform: translateY(-46px); }
+  }
+  .focus-status .lucide-lock.is-running { animation: none; }
+}
+@keyframes sky-rise { from { opacity: 0; transform: translateY(6px) rotate(-20deg); } to { opacity: 1; transform: none; } }

@@ -1,0 +1,209 @@
+/* ==========================================================================
+   Theme: Claymorphism — soft inflated forms lit from the upper left. Pink
+   cushions, cream trays, pastel objects; crisp flat text on molded surfaces.
+   Tokens from docs/theme-prompts.md.
+   ========================================================================== */
+html[data-ui="clay"][data-theme] {
+  --font-display: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --text-base: 0.9375rem;
+
+  --bg-app: #f1f2fa;                 /* ground */
+  --bg-sunken: #e7e8f3;
+  --surface: #fffdf7;                /* cream tray */
+  --surface-raised: #fffdf7;
+  --surface-hover: #fbf7ee;
+  --surface-active: #f4efe4;
+  --surface-overlay: rgba(56, 49, 57, 0.28);
+  --border: rgba(56, 49, 57, 0.08);
+  --border-strong: rgba(56, 49, 57, 0.16);
+  --border-input: rgba(56, 49, 57, 0.14);
+  --divider: rgba(56, 49, 57, 0.07);
+  --text: #383139;                   /* ink */
+  --text-secondary: #48404b;         /* ink-secondary */
+  --text-tertiary: #5d5460;
+  --text-disabled: #a49ba6;
+  --accent: #f6a3ca;                 /* pink */
+  --accent-hover: #f291bf;
+  --accent-fg: #383139;
+  --accent-soft: rgba(246, 163, 202, 0.28);
+  --accent-text: #9b3f6b;
+  --accent-glow: #f6a3ca;
+  --clay-mint: #c0efdc;
+  --clay-lavender: #ded0f9;
+  --clay-butter: #f9e7a8;
+  --clay-blue: #c5e5fb;
+
+  --success: #2f7d5b; --success-soft: #c0efdc;
+  --warning: #8a6a10; --warning-soft: #f9e7a8;
+  --danger: #b2384f;  --danger-soft: rgba(246, 163, 202, 0.4);
+  --info: #2f6c93;    --info-soft: #c5e5fb;
+
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 30px;                 /* cushions (surface radius, scaled for app density) */
+  --radius-xl: 38px;                 /* trays */
+  /* The clay recipe: broad outer shadow + light inset upper-left + dark inset lower-right */
+  --clay: 10px 12px 26px rgba(56, 49, 57, 0.14), inset 3px 3px 6px rgba(255, 255, 255, 0.95), inset -4px -5px 9px rgba(56, 49, 57, 0.09);
+  --clay-small: 5px 6px 14px rgba(56, 49, 57, 0.14), inset 2px 2px 4px rgba(255, 255, 255, 0.9), inset -3px -3px 6px rgba(56, 49, 57, 0.1);
+  --clay-pressed: 2px 2px 5px rgba(56, 49, 57, 0.12), inset 3px 3px 7px rgba(56, 49, 57, 0.14), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  --clay-well: inset 3px 3px 7px rgba(56, 49, 57, 0.12), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  --shadow-xs: none;
+  --shadow-sm: var(--clay-small);
+  --shadow-md: var(--clay);
+  --shadow-lg: 16px 20px 44px rgba(56, 49, 57, 0.2), inset 3px 3px 6px rgba(255, 255, 255, 0.95);
+  --well-hi: none;
+  --glass: #fffdf7; --glass-strong: #fffdf7; --glass-edge: none;
+  --ink-hard: #383139;
+  --bloom-1: transparent; --bloom-2: transparent; --grain-opacity: 0;
+  --dur-fast: 180ms;
+  --skeleton: #ecebf3; --skeleton-shine: #f7f7fc;
+  --focus-ring: 0 0 0 3px #383139;
+}
+
+html[data-ui="clay"] {
+  & :is(h1, h2, .t-title, .t-display) { font-weight: 700; letter-spacing: -0.035em; }
+  & .t-title { font-size: 1.875rem; }
+
+  /* Sidebar: a cream tray floating on the ground */
+  & .sidebar { inset: 14px auto 14px 14px; border: none; border-radius: var(--radius-xl); background: var(--surface); box-shadow: var(--clay); }
+  & .main { margin-left: calc(var(--sidebar-width) + 28px); }
+  @media (max-width: 899px) { & .main { margin-left: 0; } }
+  & .nav-indicator { background: var(--accent); border-radius: 999px; box-shadow: var(--clay-small); }
+  & .nav-item { border-radius: 999px; }
+  & .nav-item.is-active, & .nav-item.is-active svg { color: var(--text); }
+  & .nav-item.is-active .nav-count { background: #fffdf7; color: var(--text); }
+  & .sidebar-search { border: none; border-radius: 999px; background: var(--bg-app); box-shadow: var(--clay-well); }
+
+  /* Trays and cushions */
+  & :is(.panel, .settings-card, .goal-stats, .cal-week, .onboarding, .auth-card) {
+    background: var(--surface);
+    border: none;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--clay);
+  }
+  & :is(.routine-card, .goal-card) { background: var(--surface); border: none; border-radius: var(--radius-lg); box-shadow: var(--clay); }
+  & .summary { background: var(--clay-lavender); border: none; border-radius: var(--radius-xl); box-shadow: var(--clay); }
+  & .summary-stats > div { border-left-color: rgba(56, 49, 57, 0.1); }
+  & .panel-header { border-bottom: none; }
+  & .item-row + .item-row { border-top-color: rgba(56, 49, 57, 0.06); }
+  & .item-row:hover { background: rgba(246, 163, 202, 0.1); }
+  & .goal-card.is-done { background: var(--clay-mint); }
+
+  /* "Up next": the pink lead cushion */
+  & .up-next { background: var(--accent); border: none; border-radius: var(--radius-xl); box-shadow: var(--clay); color: var(--text); }
+  & .up-next-label { color: var(--text); font-weight: 700; }
+  & .up-next .routine-icon { background: #fffdf7; color: var(--text); box-shadow: var(--clay-small); }
+  & .up-next .btn-primary { background: #fffdf7; color: var(--text); }
+  & .up-next .btn-ghost { color: var(--text); }
+
+  /* Buttons: thick pills; hover raises, press lowers and compresses */
+  & .btn { border-radius: 999px; font-weight: 700; border: none; }
+  & :is(.btn-primary, .lockin-launch, .icon-btn-accent) {
+    background: var(--accent);
+    color: var(--text);
+    border: none;
+    box-shadow: var(--clay-small);
+    transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  }
+  & .btn-secondary { background: var(--surface); color: var(--text); box-shadow: var(--clay-small); }
+  @media (hover: hover) and (pointer: fine) {
+    & :is(.btn-primary, .btn-secondary, .lockin-launch):hover:not(:disabled) { transform: translateY(-2px); box-shadow: 7px 9px 18px rgba(56, 49, 57, 0.16), inset 2px 2px 4px rgba(255, 255, 255, 0.9), inset -3px -3px 6px rgba(56, 49, 57, 0.1); }
+  }
+  & :is(.btn-primary, .btn-secondary, .lockin-launch, .icon-btn-accent):active:not(:disabled) { transform: translateY(1px) scale(0.97); box-shadow: var(--clay-pressed); }
+  & .lockin-launch { border-radius: 999px; height: 42px; }
+  & .lockin-launch .kbd { background: rgba(255, 255, 255, 0.6); border-color: transparent; }
+  & .btn-ghost { color: var(--text-secondary); }
+
+  /* Recessed controls */
+  & .check { border: none; background: var(--bg-app); box-shadow: var(--clay-well); }
+  & .check.is-checked { background: var(--clay-mint); color: var(--text); box-shadow: var(--clay-small); }
+  & .check-square { border-radius: 8px; }
+  & .input, & .stepper, & .chip-date { border: none; border-radius: 18px; background: var(--bg-app); box-shadow: var(--clay-well); }
+  & .input:focus { box-shadow: var(--clay-well), 0 0 0 3px var(--text); }
+  & .segmented { border: none; border-radius: 999px; background: var(--bg-app); box-shadow: var(--clay-well); padding: 4px; }
+  & .segmented-item { border-radius: 999px; }
+  & .segmented-item.is-selected { background: var(--accent); box-shadow: var(--clay-small); }
+  & .chip { border: none; background: var(--surface); box-shadow: var(--clay-small); }
+  & .chip.is-selected { background: var(--clay-butter); color: var(--text); }
+  & .item-tag { background: var(--clay-blue); color: var(--text); border-radius: 999px; padding: 1px 8px; }
+  & .routine-icon { border-radius: 14px; background: var(--clay-mint); color: var(--text); box-shadow: var(--clay-small); }
+  & .avatar { background: var(--clay-butter); color: var(--text); border: none; box-shadow: var(--clay-small); }
+  & .progress { height: 10px; background: var(--bg-app); box-shadow: var(--clay-well); }
+  & .progress-fill { background: var(--accent); border-radius: 999px; }
+  & .kbd { border-radius: 8px; border: none; background: var(--bg-app); box-shadow: var(--clay-well); }
+
+  /* Sequencer: cushions that fill pink */
+  & .sequence-step { border-radius: 12px; border: none; background: var(--bg-app); box-shadow: var(--clay-well); }
+  & .sequence-day.is-done .sequence-step { box-shadow: var(--clay-small); color: var(--text); }
+  & .sequence-day.is-today .sequence-step { background: var(--clay-butter); box-shadow: var(--clay-small); }
+  & .sequence-day.is-rest .sequence-step { box-shadow: none; border: 2px dashed rgba(56, 49, 57, 0.15); }
+  & .sequence-day.is-missed .sequence-step { background: var(--clay-lavender); color: var(--text); }
+
+  /* Floating layers */
+  & :is(.menu, .command) { border: none; border-radius: 26px; background: var(--surface); box-shadow: var(--shadow-lg); }
+  & .dialog { border: none; border-radius: var(--radius-xl); background: var(--surface); box-shadow: var(--shadow-lg); }
+  & .dialog-footer { border-top: none; border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+  & .menu-item, & .command-item { border-radius: 14px; }
+  & .menu-item.is-active, & .command-item.is-active { background: var(--clay-lavender); }
+  & .toast { border-radius: 24px; background: var(--text); color: #fffdf7; }
+  & .demo-banner, & .offline-banner { border: none; border-radius: 26px; background: var(--clay-butter); box-shadow: var(--clay-small); }
+
+  @media (max-width: 899px) {
+    & .topbar { background: var(--bg-app); -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: none; }
+    & .tabbar { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); border: none; border-radius: 999px; background: var(--surface); box-shadow: var(--clay); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    & .tab.is-active { color: var(--text); }
+    & .tab.is-active .tab-icon { background: var(--accent); box-shadow: var(--clay-small); border-radius: 999px; }
+  }
+}
+
+/* ---- Lock In: a cream clay dial with a thick pink arc ---- */
+html[data-ui="clay"] .focus-mode {
+  --ring: #f6a3ca;
+  --fm-bg: #f1f2fa;
+  --fm-ink: #383139;
+  --fm-ink-2: #48404b;
+  --fm-ink-3: #5d5460;
+  --fm-ink-4: #8d838f;
+  --fm-tint: #fffdf7;
+  --fm-tint-hover: #ffffff;
+  --fm-line: rgba(56, 49, 57, 0.1);
+  --fm-track: #e7e8f3;
+  --fm-tick: rgba(56, 49, 57, 0.18);
+  --fm-comet: #fffdf7;
+  --fm-primary: #f6a3ca;
+  --fm-primary-hover: #f291bf;
+  --fm-primary-fg: #383139;
+  --fm-panel: #fffdf7;
+  --fm-glow: 0%;
+  --fm-radius: 999px;
+  color-scheme: light;
+  &.is-break { --ring: #8fdcbc; }
+  & .focus-title { font-weight: 700; letter-spacing: -0.035em; }
+  & .focus-status { box-shadow: var(--clay-small); }
+  & .focus-timer::before {
+    content: '';
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    background: #fffdf7;
+    box-shadow: 14px 18px 36px rgba(56, 49, 57, 0.16), inset 4px 4px 8px rgba(255, 255, 255, 0.95), inset -6px -8px 14px rgba(56, 49, 57, 0.08);
+  }
+  & .focus-timer svg { position: relative; }
+  & .focus-ticks { display: none; }
+  & .focus-ring-track { stroke-width: 14; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-width: 14; }
+  & .focus-comet-glow { display: none; }
+  & .focus-comet-head { r: 5; fill: #fffdf7; }
+  & .focus-countdown { font-weight: 700; letter-spacing: -0.05em; }
+  & .focus-btn { font-weight: 700; background: #fffdf7; box-shadow: var(--clay-small); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+  & .focus-btn:hover { transform: translateY(-2px); }
+  & .focus-btn:active { transform: translateY(1px) scale(0.97); box-shadow: var(--clay-pressed); }
+  & .focus-btn-primary { background: var(--ring); }
+  & .focus-btn-ghost { background: transparent; box-shadow: none; }
+  & .focus-btn-danger { background: #f6a3ca; color: #383139; }
+  & .player { box-shadow: var(--clay-well); background: #e7e8f3; border: none; }
+  & .focus-confirm { border: none; border-radius: 34px; box-shadow: var(--shadow-lg); }
+}

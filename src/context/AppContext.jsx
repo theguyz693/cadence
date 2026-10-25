@@ -230,7 +230,7 @@ function appReducer(state, action) {
         goals: [],
         routines: [],
         completions: {},
-        settings: { ...emptyState.settings, theme: state.settings?.theme, accentColor: state.settings?.accentColor },
+        settings: { ...emptyState.settings, theme: state.settings?.theme, accentColor: state.settings?.accentColor, uiTheme: state.settings?.uiTheme },
       };
 
     default:
@@ -361,7 +361,8 @@ const emptyState = {
   completions: {},
   settings: {
     theme: 'system',
-    accentColor: 'cobalt',
+    uiTheme: 'standard',
+    accentColor: 'ember',
     showBanner: false,
     bgBlur: 25,
     bgDim: 60,

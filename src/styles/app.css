@@ -489,7 +489,7 @@
 .summary-stats > div:last-child { padding-right: 0; }
 .summary-stats dt { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: 2px; }
 .summary-stats dd { font-size: var(--text-lg); font-weight: var(--weight-semibold); letter-spacing: -0.02em; }
-.summary-stats dd span { color: var(--text-tertiary); font-weight: var(--weight-medium); font-size: var(--text-sm); }
+.summary-stats dd .of { color: var(--text-tertiary); font-weight: var(--weight-medium); font-size: var(--text-sm); }
 @media (max-width: 720px) {
   .summary { flex-direction: column; align-items: stretch; gap: 14px; padding: 14px 16px; }
   .summary-stats > div { flex: 1; padding: 0 12px; }
@@ -506,7 +506,7 @@
 .up-next-label {
   font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
-  text-transform: uppercase;
+
   letter-spacing: var(--tracking-caps);
   color: var(--accent-text);
   margin-bottom: 8px;
@@ -842,7 +842,7 @@ button.sequence-hit:focus-visible .sequence-step { box-shadow: var(--focus-ring)
   border-radius: var(--radius-md);
   border: 1.5px dashed var(--border-strong);
   color: var(--text-tertiary);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .pattern-cell:hover { border-color: var(--accent); color: var(--text); }
 .pattern-cell:active { transform: scale(0.95); }
@@ -1289,3 +1289,25 @@ button.tl-pill:not(:disabled):hover { color: var(--text); }
 .feed-url .input { font-family: var(--font-mono); font-size: 12px; }
 .cal-block.is-short .tl-time { display: none; }
 .cal-block.is-short .tl-title { font-size: 11px; }
+
+/* Google sign-in */
+.google-auth { display: flex; flex-direction: column; gap: 16px; }
+.google-auth:not(.is-available) { gap: 0; }
+.google-auth-button { position: relative; min-height: 0; }
+.google-auth.is-available .google-auth-button { min-height: 44px; }
+.google-btn { display: flex; justify-content: center; width: 100%; color-scheme: normal; }
+.google-btn iframe { margin: 0 auto !important; }
+.google-auth-busy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.auth-divider { display: flex; align-items: center; gap: 12px; font-size: var(--text-xs); color: var(--text-tertiary); }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--divider); }

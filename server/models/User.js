@@ -10,11 +10,16 @@ const userSchema = new mongoose.Schema({
     minlength: 2,
     maxlength: 30,
   },
+  // Optional for Google accounts, which sign in without a Cadence password.
   password: {
     type: String,
-    required: true,
+    required: function requirePassword() { return !this.googleId; },
     minlength: 4,
   },
+  googleId: { type: String, index: { unique: true, sparse: true } },
+  email: { type: String, lowercase: true, trim: true, index: { unique: true, sparse: true } },
+  name: { type: String, trim: true, maxlength: 80 },
+  picture: { type: String },
 }, { timestamps: true });
 
 // Hash password before saving

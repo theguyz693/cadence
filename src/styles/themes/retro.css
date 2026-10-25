@@ -1,0 +1,233 @@
+/* ==========================================================================
+   Theme: Retro — a 90s desktop. Teal tiled desktop, grey beveled windows
+   with navy title bars, hard black frames, purple and yellow highlights.
+   Tokens from docs/theme-prompts.md.
+   ========================================================================== */
+html[data-ui="retro"][data-theme] {
+  --font-display: 'Host Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+  --bg-app: #008080;                 /* desktop */
+  --bg-sunken: #ffffff;
+  --surface: #d4d4d4;                /* window */
+  --surface-raised: #d4d4d4;
+  --surface-hover: #c8c8c8;
+  --surface-active: #bdbdbd;
+  --surface-overlay: rgba(0, 0, 0, 0.35);
+  --border: #000000;
+  --border-strong: #000000;
+  --border-input: #808080;
+  --divider: #808080;
+  --text: #000000;
+  --text-secondary: #1f1f1f;
+  --text-tertiary: #333333;
+  --text-disabled: #808080;
+  --accent: #6600ff;                 /* purple */
+  --accent-hover: #5200cc;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(102, 0, 255, 0.12);
+  --accent-text: #5200cc;
+  --accent-glow: #6600ff;
+  --rt-yellow: #ffff00;
+  --rt-pink: #ff00b8;
+  --rt-navy: #000080;
+  --rt-link: #0000ff;
+
+  --success: #006400; --success-soft: #c8f0c8;
+  --warning: #6b5a00; --warning-soft: #ffff00;
+  --danger: #b00000;  --danger-soft: #ffd0d0;
+  --info: #000080;    --info-soft: #d0d0ff;
+
+  --radius-xs: 0; --radius-sm: 0; --radius-md: 0; --radius-lg: 0; --radius-xl: 0;
+  /* Classic bevels */
+  --rt-out: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
+  --rt-in: inset 1px 1px 0 #808080, inset -1px -1px 0 #ffffff;
+  --shadow-xs: none;
+  --shadow-sm: 2px 2px 0 #000;
+  --shadow-md: 4px 4px 0 #000;
+  --shadow-lg: 6px 6px 0 #000;
+  --well-hi: none;
+  --glass: #d4d4d4; --glass-strong: #d4d4d4; --glass-edge: none;
+  --ink-hard: #000;
+  --bloom-1: transparent; --bloom-2: transparent; --grain-opacity: 0;
+  --dur-fast: 0s;
+  --skeleton: #c0c0c0; --skeleton-shine: #d4d4d4;
+}
+
+html[data-ui="retro"] {
+  /* Tiled desktop */
+  & body {
+    background-color: #008080;
+    background-image:
+      linear-gradient(45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.06) 75%),
+      linear-gradient(45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.06) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 8px 8px;
+  }
+  & :is(h1, h2, h3, .t-title, .t-heading, .dialog-title, .brand-name) { text-transform: uppercase; font-weight: 800; letter-spacing: -0.01em; }
+  /* Page titles sit on the desktop in white */
+  & :is(.page-header, .today-header, .goal-detail-head) :is(.t-title, .page-eyebrow, .page-description),
+  & .page > :is(.back-link, .t-section, h2),
+  & .settings-section-head :is(h2, h3, .t-section, p) { color: #fff; text-shadow: 2px 2px 0 #000; }
+  & .page-eyebrow svg { color: var(--rt-yellow); }
+  & .t-title { font-size: 1.875rem; }
+  & .t-section { font-family: var(--font-display); text-transform: uppercase; font-weight: 800; letter-spacing: 0.02em; }
+  & .t-meta { font-family: var(--font-mono); }
+
+  /* Sidebar: the taskbar column */
+  & .sidebar { background: var(--surface); border-right: 2px solid #000; box-shadow: var(--rt-out); }
+  & .nav-indicator { background: var(--rt-navy); border-radius: 0; }
+  & .sidebar-nav .nav-item.is-active, & .sidebar-nav .nav-item.is-active svg { color: #fff; }
+  & .sidebar-bottom .nav-item.is-active { color: #000; font-weight: 700; }
+  & .nav-count { border-radius: 0; background: #fff; color: #000; box-shadow: var(--rt-in); }
+  & .nav-item.is-active .nav-count { background: var(--rt-yellow); }
+  & .sidebar-search { border: none; border-radius: 0; background: #fff; box-shadow: var(--rt-in), 0 0 0 1px #000; }
+  & a { text-underline-offset: 2px; }
+  & a:not(.btn):not(.nav-item):hover { color: var(--rt-link); }
+
+  /* Windows: grey, black frame, hard offset; panel headers become navy title bars */
+  & :is(.panel, .summary, .routine-card, .goal-card, .goal-stats, .settings-card, .onboarding, .auth-card, .cal-week) {
+    background: var(--surface);
+    border: 2px solid #000;
+    border-radius: 0;
+    box-shadow: var(--rt-out), var(--shadow-md);
+  }
+  & .panel-header { background: var(--rt-navy); color: #fff; border-bottom: 2px solid #000; margin: 0; }
+  & .panel-header :is(.t-section, .t-heading, .t-meta, h2, h3, svg) { color: #fff; }
+  & .panel-header :is(a, button, .btn-ghost) { color: #fff; }
+  & .item-row + .item-row { border-top: 1px solid #808080; }
+  & .item-row:hover { background: #c8c8c8; }
+  & .goal-card.is-done { background: #c8f0c8; }
+  & .summary-stats dd { font-family: var(--font-mono); }
+  & .summary-stats > div { border-left: 1px solid #808080; }
+
+  /* "Up next": the yellow alert window */
+  & .up-next { background: var(--rt-yellow); border: 2px solid #000; border-radius: 0; box-shadow: var(--shadow-md); color: #000; }
+  & .up-next-label { color: #000; font-family: var(--font-mono); text-transform: uppercase; font-weight: 700; }
+  & .up-next .routine-icon { background: #fff; color: #000; box-shadow: 0 0 0 2px #000; }
+  & .up-next .btn-ghost { color: #000; }
+
+  /* Keys: raised; press reverses the bevel */
+  & .btn { border-radius: 0; font-weight: 600; transition: none; }
+  & :is(.btn-primary, .btn-secondary, .lockin-launch) { border: 2px solid #000; }
+  & :is(.btn-primary, .lockin-launch, .icon-btn-accent) { background: var(--accent); color: #fff; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(0, 0, 0, 0.45), var(--shadow-sm); }
+  & .btn-secondary { background: var(--surface); color: #000; box-shadow: var(--rt-out), var(--shadow-sm); }
+  @media (hover: hover) and (pointer: fine) {
+    & :is(.btn-primary, .lockin-launch):hover:not(:disabled) { background: var(--rt-pink); transform: none; }
+    & .btn-secondary:hover:not(:disabled) { background: #e0e0e0; }
+  }
+  & :is(.btn-primary, .btn-secondary, .lockin-launch, .icon-btn-accent):active:not(:disabled) { transform: translate(2px, 2px); box-shadow: var(--rt-in); }
+  & .lockin-launch { border-radius: 0; }
+  & .lockin-launch .kbd { background: transparent; border-color: rgba(255, 255, 255, 0.7); color: #fff; }
+  & :focus-visible { box-shadow: none; outline: 1px dotted #000; outline-offset: 2px; }
+
+  /* White inset wells */
+  & .check { border-radius: 0; border: none; background: #fff; box-shadow: var(--rt-in), 0 0 0 1px #000; }
+  & .check.is-checked { background: #fff; color: #000; }
+  & .input, & .stepper, & .chip-date { border: none; border-radius: 0; background: #fff; box-shadow: var(--rt-in), 0 0 0 1px #000; }
+  & .input:focus { box-shadow: var(--rt-in), 0 0 0 1px #000, 0 0 0 3px var(--rt-yellow); }
+  & .segmented { border-radius: 0; border: 2px solid #000; background: var(--surface); }
+  & .segmented-item { border-radius: 0; }
+  & .segmented-item.is-selected { background: var(--rt-navy); color: #fff; box-shadow: none; }
+  & .chip { border-radius: 0; border: 2px solid #000; background: var(--surface); box-shadow: var(--rt-out); }
+  & .chip.is-selected { background: var(--rt-navy); color: #fff; box-shadow: var(--rt-in); }
+  & .item-tag { border-radius: 0; background: var(--rt-yellow); color: #000; border: 1px solid #000; padding: 0 5px; font-family: var(--font-mono); font-size: 0.6875rem; }
+  & .routine-icon { border-radius: 0; background: #fff; color: var(--rt-navy); box-shadow: var(--rt-in), 0 0 0 1px #000; }
+  & .avatar { border-radius: 0; background: var(--rt-pink); color: #fff; border: 2px solid #000; }
+  & .progress { height: 14px; border-radius: 0; background: #fff; box-shadow: var(--rt-in), 0 0 0 1px #000; }
+  & .progress-fill { border-radius: 0; background: repeating-linear-gradient(90deg, var(--rt-navy) 0 8px, transparent 8px 10px); }
+  & .kbd { border-radius: 0; border: 1px solid #000; background: var(--surface); box-shadow: var(--rt-out); }
+
+  /* Sequencer: square cells */
+  & .sequence-step { border-radius: 0; border: 1px solid #000; background: #fff; }
+  & .sequence-day.is-done .sequence-step { color: #fff; }
+  & .sequence-day.is-today .sequence-step { background: var(--rt-yellow); border-width: 2px; }
+  & .sequence-day.is-rest .sequence-step { border-style: dotted; background: var(--surface); }
+  & .sequence-day.is-missed .sequence-step { background: repeating-linear-gradient(45deg, #fff 0 3px, #000 3px 4px); color: var(--danger); }
+
+  /* Floating layers: windows */
+  & :is(.menu, .command, .dialog) { background: var(--surface); border: 2px solid #000; border-radius: 0; box-shadow: var(--rt-out), var(--shadow-lg); }
+  & .dialog-header { background: var(--rt-navy); color: #fff; }
+  & .dialog-header :is(.dialog-title, .t-meta, svg, .icon-btn) { color: #fff; }
+  & .dialog-footer { background: var(--surface); border-top: 1px solid #808080; border-radius: 0; }
+  & .menu-item, & .command-item { border-radius: 0; }
+  & .menu-item.is-active, & .command-item.is-active { background: var(--rt-navy); color: #fff; }
+  & .menu-item.is-active svg, & .command-item.is-active svg { color: #fff; }
+  & .toast { border-radius: 0; background: var(--rt-yellow); color: #000; border: 2px solid #000; box-shadow: var(--shadow-md); }
+  & .demo-banner, & .offline-banner { background: var(--rt-yellow); color: #000; border: 2px solid #000; border-radius: 0; box-shadow: var(--shadow-sm); }
+
+  @media (max-width: 899px) {
+    & .topbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 2px solid #000; }
+    & .tabbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; border: 2px solid #000; border-radius: 0; box-shadow: var(--rt-out), var(--shadow-md); }
+    & .tab.is-active { color: #000; }
+    & .tab.is-active .tab-icon { background: var(--rt-yellow); border-radius: 0; box-shadow: 0 0 0 1px #000; }
+  }
+}
+
+/* ---- Lock In: TIMER.EXE — a beveled window on the teal desktop ---- */
+html[data-ui="retro"] .focus-mode {
+  --ring: #6600ff;
+  --fm-bg: #008080;
+  --fm-ink: #ffffff;
+  --fm-ink-2: #ffffff;
+  --fm-ink-3: #e6ffff;
+  --fm-ink-4: #b3e6e6;
+  --fm-tint: #d4d4d4;
+  --fm-tint-hover: #e0e0e0;
+  --fm-line: #000000;
+  --fm-track: #ffffff;
+  --fm-tick: #000000;
+  --fm-comet: #ffff00;
+  --fm-primary: #6600ff;
+  --fm-primary-hover: #ff00b8;
+  --fm-primary-fg: #ffffff;
+  --fm-panel: #d4d4d4;
+  --fm-glow: 0%;
+  --fm-radius: 0;
+  color-scheme: light;
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.06) 75%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.06) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+  &.is-break { --ring: #008000; }
+  & .focus-title, & .focus-brand, & .focus-complete-text { text-shadow: 2px 2px 0 #000; }
+  & .focus-title { font-family: var(--font-display); text-transform: uppercase; font-weight: 800; }
+  & .focus-status { border-radius: 0; background: #ffff00; color: #000; border: 2px solid #000; font-family: var(--font-mono); text-transform: uppercase; }
+  & .focus-status svg { color: #000; }
+  /* the window */
+  & .focus-timer { padding: 36px 14px 14px; width: min(340px, 82vw); aspect-ratio: auto; }
+  & .focus-timer::before {
+    content: 'TIMER.EXE';
+    position: absolute;
+    inset: 0;
+    padding: 6px 10px;
+    font: 700 12px/1 var(--font-mono);
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: linear-gradient(#000080, #000080) top / 100% 26px no-repeat, #d4d4d4;
+    border: 2px solid #000;
+    box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080, 6px 6px 0 #000;
+  }
+  & .focus-timer svg { position: relative; display: block; height: auto; background: #fff; box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #fff, 0 0 0 1px #000; }
+  & .focus-time { top: 36px; left: 14px; right: 14px; bottom: 14px; }
+  & .focus-ring-track { stroke: #d4d4d4; stroke-width: 10; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-linecap: butt; stroke-width: 10; }
+  & .focus-ticks line { stroke-linecap: butt; }
+  & .focus-comet-glow { display: none; }
+  & .focus-comet-head { r: 6; fill: #ffff00; stroke: #000; stroke-width: 2; }
+  & .focus-countdown { font-family: var(--font-mono); font-weight: 600; color: #000; }
+  & .is-paused .focus-countdown, &.is-paused .focus-countdown { color: #808080; }
+  & .focus-meta { color: #000; font-family: var(--font-mono); }
+  & .focus-btn, & .focus-ghost-btn { border-radius: 0; }
+  & .focus-btn { color: #000; font-weight: 600; border: 2px solid #000; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080, 2px 2px 0 #000; transition: none; }
+  & .focus-btn-primary { color: #fff; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(0, 0, 0, 0.45), 2px 2px 0 #000; }
+  & .focus-btn:active { transform: translate(2px, 2px); box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #fff; }
+  & .focus-btn-ghost { background: #d4d4d4; }
+  & .focus-btn-danger { background: #ff00b8; color: #fff; }
+  & .focus-ghost-btn:hover { background: rgba(0, 0, 0, 0.2); color: #fff; }
+  & .player { background: #d4d4d4; border: 2px solid #000; --fm-ink: #000; --fm-ink-2: #000; --fm-ink-3: #333; --fm-ink-4: #555; --fm-line: #808080; }
+  & .focus-confirm { border: 2px solid #000; border-radius: 0; box-shadow: inset 1px 1px 0 #fff, 6px 6px 0 #000; --fm-ink: #000; --fm-ink-2: #1f1f1f; }
+  & .focus-confirm .focus-btn:not(.focus-btn-danger) { background: #d4d4d4; }
+}

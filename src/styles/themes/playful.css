@@ -1,0 +1,208 @@
+/* ==========================================================================
+   Theme: Playful Geometric — cream ground, thick dark outlines, hard offset
+   shadows, violet actions, pink/amber/mint shapes. Bold and friendly.
+   Tokens from docs/theme-prompts.md.
+   ========================================================================== */
+html[data-ui="playful"][data-theme] {
+  --font-display: 'Host Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Host Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  --bg-app: #fffdf5;                 /* ground */
+  --bg-sunken: #f6f2e3;
+  --surface: #ffffff;                /* panel */
+  --surface-raised: #ffffff;
+  --surface-hover: #f1ebff;          /* selection */
+  --surface-active: #e6dcff;
+  --surface-overlay: rgba(37, 43, 58, 0.4);
+  --border: #252b3a;                 /* outline */
+  --border-strong: #252b3a;
+  --border-input: #252b3a;
+  --divider: #b8b6c5;                /* rule-muted */
+  --text: #253044;                   /* ink */
+  --text-secondary: #3d475c;
+  --text-tertiary: #535c70;
+  --text-disabled: #a5a3b3;
+  --accent: #6434df;                 /* violet */
+  --accent-hover: #5527cc;
+  --accent-fg: #ffffff;
+  --accent-soft: #f1ebff;
+  --accent-text: #5527cc;
+  --accent-glow: #6434df;
+  --pg-pink: #ff78c5;
+  --pg-amber: #ffd05b;
+  --pg-mint: #9bf1cd;
+  --pg-field-soft: #e9fff5;
+
+  --success: #127a52; --success-soft: #9bf1cd;
+  --warning: #8a5d00; --warning-soft: #ffd05b;
+  --danger: #c0287a;  --danger-soft: #ffd3ec;
+  --info: #6434df;    --info-soft: #f1ebff;
+
+  --radius-xs: 8px; --radius-sm: 12px; --radius-md: 17px; --radius-lg: 17px; --radius-xl: 22px;
+  --pg-line: 3px solid #252b3a;
+  --pg-detail: 2px solid #252b3a;
+  --pg-shadow: 5px 5px 0 #252b3a;
+  --pg-shadow-sm: 3px 3px 0 #252b3a;
+  --shadow-xs: none;
+  --shadow-sm: var(--pg-shadow-sm);
+  --shadow-md: var(--pg-shadow);
+  --shadow-lg: 7px 7px 0 #252b3a;
+  --well-hi: none;
+  --glass: #fffdf5; --glass-strong: #ffffff; --glass-edge: none;
+  --ink-hard: #252b3a;
+  --bloom-1: transparent; --bloom-2: transparent; --grain-opacity: 0;
+  --dur-fast: 180ms;
+  --skeleton: #f1ebff; --skeleton-shine: #faf7ff;
+}
+
+html[data-ui="playful"] {
+  & :is(h1, h2, h3, .t-title, .t-heading, .dialog-title, .brand-name) { font-weight: 800; letter-spacing: -0.03em; }
+  & .t-title { font-size: 2rem; }
+  & .t-section { font-family: var(--font-display); font-weight: 800; }
+  & .t-fig, & .summary-stats dd { font-weight: 800; }
+
+  /* Sidebar */
+  & .sidebar { background: var(--bg-app); border-right: var(--pg-line); }
+  & .nav-indicator { background: var(--pg-amber); border: var(--pg-detail); border-radius: 12px; box-shadow: var(--pg-shadow-sm); }
+  & .nav-item { font-weight: 600; }
+  & .nav-item.is-active, & .nav-item.is-active svg { color: var(--text); }
+  & .nav-count { border: var(--pg-detail); background: #fff; color: var(--text); }
+  & .sidebar-search { border: var(--pg-detail); border-radius: 12px; background: #fff; }
+
+  /* Panels: outlined white slabs with offset shadow; each kind gets a colored shape */
+  & :is(.panel, .settings-card, .cal-week, .goal-stats, .onboarding, .auth-card) { background: var(--surface); border: var(--pg-line); border-radius: var(--radius-xl); box-shadow: var(--pg-shadow); }
+  & :is(.routine-card, .goal-card) { background: var(--surface); border: var(--pg-line); border-radius: var(--radius-lg); box-shadow: var(--pg-shadow); }
+  & .summary { background: var(--pg-field-soft); border: var(--pg-line); border-radius: var(--radius-xl); box-shadow: var(--pg-shadow); }
+  & .summary-stats > div { border-left: var(--pg-detail); }
+  & .panel-header { border-bottom: var(--pg-detail); }
+  & .item-row + .item-row { border-top: 2px dashed var(--divider); }
+  & .item-row:hover { background: var(--surface-hover); }
+  & .goal-card.is-done { background: var(--pg-mint); }
+  @media (hover: hover) and (pointer: fine) {
+    & :is(.routine-card, .goal-card) { transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+    & :is(.routine-card, .goal-card):hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 #252b3a; }
+  }
+
+  /* "Up next": a mint panel with a pink sticker */
+  & .up-next { position: relative; background: var(--pg-mint); border: var(--pg-line); border-radius: var(--radius-xl); box-shadow: var(--pg-shadow); color: var(--text); }
+  & .up-next::after { content: ''; position: absolute; top: -12px; right: 22px; width: 24px; height: 24px; border-radius: 50%; background: var(--pg-pink); border: var(--pg-detail); pointer-events: none; }
+  & .up-next-label { color: var(--text); font-weight: 800; }
+  & .up-next .routine-icon { background: #fff; color: var(--text); }
+
+  /* Buttons: outlined, offset; hover lifts, press flattens */
+  & .btn { border-radius: 14px; font-weight: 700; border: var(--pg-detail); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+  & :is(.btn-primary, .lockin-launch, .icon-btn-accent) { background: var(--accent); color: #fff; border: var(--pg-detail); box-shadow: var(--pg-shadow-sm); }
+  & .btn-secondary { background: #fff; color: var(--text); box-shadow: var(--pg-shadow-sm); }
+  & .btn-ghost { border-color: transparent; }
+  @media (hover: hover) and (pointer: fine) {
+    & :is(.btn-primary, .btn-secondary, .lockin-launch):hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #252b3a; }
+    & .btn-primary:hover:not(:disabled) { background: var(--accent); }
+  }
+  & :is(.btn-primary, .btn-secondary, .lockin-launch, .icon-btn-accent):active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #252b3a; }
+  & .lockin-launch { border-radius: 14px; }
+  & .lockin-launch .kbd { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.5); color: #fff; }
+  & :focus-visible { box-shadow: 0 0 0 3px var(--pg-amber), 0 0 0 5px #252b3a; }
+
+  /* Controls */
+  & .check { border: var(--pg-detail); background: #fff; box-shadow: none; }
+  & .check.is-checked { background: var(--pg-mint); color: var(--text); border-color: #252b3a; }
+  & .check-square { border-radius: 6px; }
+  & .input, & .stepper, & .chip-date { border: var(--pg-detail); border-radius: 12px; background: #fff; }
+  & .input:focus { border-color: var(--accent); box-shadow: 3px 3px 0 var(--accent); }
+  & .segmented { border: var(--pg-detail); border-radius: 14px; background: #fff; }
+  & .segmented-item { border-radius: 10px; font-weight: 700; }
+  & .segmented-item.is-selected { background: var(--pg-amber); color: var(--text); box-shadow: none; }
+  & .chip { border: var(--pg-detail); background: #fff; font-weight: 600; }
+  & .chip.is-selected { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
+  & .item-tag { background: var(--pg-amber); color: var(--text); border: 1.5px solid #252b3a; border-radius: 999px; padding: 0 8px; font-weight: 600; }
+  & .routine-icon { border-radius: 12px; border: var(--pg-detail); background: var(--pg-amber); color: var(--text); box-shadow: none; }
+  & .routine-card:nth-child(3n + 2) .routine-icon { background: var(--pg-pink); }
+  & .routine-card:nth-child(3n) .routine-icon { background: var(--pg-mint); }
+  & .avatar { background: var(--pg-pink); color: var(--text); border: var(--pg-detail); }
+  & .progress { height: 12px; border: var(--pg-detail); background: #fff; }
+  & .progress-fill { background: var(--accent); }
+  & .kbd { border: 1.5px solid #252b3a; background: #fff; }
+
+  /* Sequencer: outlined tiles */
+  & .sequence-step { border: var(--pg-detail); border-radius: 8px; background: #fff; }
+  & .sequence-day.is-done .sequence-step { color: #fff; }
+  & .sequence-day.is-today .sequence-step { background: var(--pg-amber); }
+  & .sequence-day.is-rest .sequence-step { border-style: dashed; border-color: var(--divider); }
+  & .sequence-day.is-missed .sequence-step { background: #ffd3ec; color: var(--danger); }
+
+  /* Floating layers */
+  & :is(.menu, .command, .dialog) { background: #fff; border: var(--pg-line); border-radius: var(--radius-xl); box-shadow: 7px 7px 0 #252b3a; }
+  & .dialog-footer { border-top: var(--pg-detail); background: var(--bg-app); border-radius: 0 0 19px 19px; }
+  & .menu-item.is-active, & .command-item.is-active { background: var(--accent-soft); }
+  & .toast { background: var(--text); color: #fff; border: var(--pg-detail); border-radius: 14px; box-shadow: var(--pg-shadow-sm); }
+  & .demo-banner, & .offline-banner { background: var(--pg-amber); border: var(--pg-detail); border-radius: 14px; box-shadow: var(--pg-shadow-sm); }
+
+  @media (max-width: 899px) {
+    & .topbar { background: var(--bg-app); -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: var(--pg-detail); }
+    & .tabbar { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; border: var(--pg-line); border-radius: 20px; box-shadow: var(--pg-shadow); }
+    & .tab.is-active { color: var(--text); }
+    & .tab.is-active .tab-icon { background: var(--pg-amber); border: var(--pg-detail); border-radius: 10px; }
+  }
+}
+
+/* ---- Lock In: an outlined sticker dial with a fat violet arc ---- */
+html[data-ui="playful"] .focus-mode {
+  --ring: #6434df;
+  --fm-bg: #fffdf5;
+  --fm-ink: #253044;
+  --fm-ink-2: #3d475c;
+  --fm-ink-3: #535c70;
+  --fm-ink-4: #8b8a9b;
+  --fm-tint: #ffffff;
+  --fm-tint-hover: #f1ebff;
+  --fm-line: #252b3a;
+  --fm-track: #f1ebff;
+  --fm-tick: #252b3a;
+  --fm-comet: #ffd05b;
+  --fm-primary: #6434df;
+  --fm-primary-hover: #6434df;
+  --fm-primary-fg: #ffffff;
+  --fm-panel: #ffffff;
+  --fm-glow: 0%;
+  --fm-radius: 14px;
+  color-scheme: light;
+  &.is-break { --ring: #19b47a; }
+  & .focus-title { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em; }
+  & .focus-status { border: 2px solid #252b3a; background: #ffd05b; color: #253044; }
+  & .focus-timer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #252b3a;
+    box-shadow: 7px 7px 0 #252b3a;
+  }
+  & .focus-timer::after {
+    content: '';
+    position: absolute;
+    top: -1%;
+    right: 3%;
+    z-index: 1;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #ff78c5;
+    border: 2px solid #252b3a;
+  }
+  & .focus-timer svg { position: relative; }
+  & .focus-ticks { display: none; }
+  & .focus-ring-track { stroke-width: 16; }
+  & .focus-ring-fill { stroke: var(--ring); stroke-width: 16; }
+  & .focus-comet-glow { display: none; }
+  & .focus-comet-head { r: 9; fill: #ffd05b; stroke: #252b3a; stroke-width: 2.5; }
+  & .focus-countdown { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.05em; }
+  & .focus-btn { font-weight: 700; border: 2px solid #252b3a; box-shadow: 3px 3px 0 #252b3a; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+  & .focus-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #252b3a; }
+  & .focus-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #252b3a; }
+  & .focus-btn-ghost { border-color: transparent; box-shadow: none; }
+  & .focus-btn-danger { background: #ff78c5; color: #253044; }
+  & .player { border-width: 2px; }
+  & .focus-confirm { border: 3px solid #252b3a; box-shadow: 7px 7px 0 #252b3a; border-radius: 22px; }
+}

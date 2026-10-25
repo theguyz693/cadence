@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sun, Repeat, CheckSquare, Target, Settings as SettingsIcon, Lock, Plus, Search,
@@ -34,6 +34,27 @@ function useAmbientBackground(settings) {
   return slots.find(s => s.id === active)?.url || randomUrl;
 }
 
+/**
+ * One raised pill that glides to the active nav row (transform only), instead
+ * of each row lighting up on its own. Snaps without animation on first paint.
+ */
+function useNavIndicator(navRef, pathname) {
+  const [style, setStyle] = useState({ opacity: 0 });
+  const first = useRef(true);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector('.nav-item.is-active');
+    if (!active) { setStyle(s => ({ ...s, opacity: 0 })); return; }
+    setStyle({
+      opacity: 1,
+      height: active.offsetHeight,
+      transform: `translateY(${active.offsetTop}px)`,
+    });
+    if (first.current) requestAnimationFrame(() => { first.current = false; });
+  }, [navRef, pathname]);
+  return { style, instant: first.current };
+}
+
 export default function Layout({ children }) {
   const { state, apiAvailable, retryConnection } = useApp();
   const { openLockIn, activeSession } = useLockIn();
@@ -44,6 +65,8 @@ export default function Layout({ children }) {
   const [retrying, setRetrying] = useState(false);
 
   const ambientUrl = useAmbientBackground(state.settings);
+  const navRef = useRef(null);
+  const indicator = useNavIndicator(navRef, location.pathname);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -137,7 +160,8 @@ export default function Layout({ children }) {
           <kbd className="kbd">{MOD_KEY} K</kbd>
         </button>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" ref={navRef}>
+          <span className={`nav-indicator ${indicator.instant ? 'no-anim' : ''}`} style={indicator.style} aria-hidden="true" />
           {nav.map(({ to, label, Icon, count }) => (
             <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'is-active' : ''}`}>
               <Icon size={16} strokeWidth={1.75} aria-hidden="true" />

@@ -1,24 +1,89 @@
-import { useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 /* --------------------------------------------------------------------------
    CheckButton — the completion control used for tasks, routines and steps.
    Renders a real checkbox role so state is announced, not just colored.
    -------------------------------------------------------------------------- */
+const SPARKS = 9;
+const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
 export function CheckButton({ checked, onChange, label, size = 'md', shape = 'circle', disabled = false, className = '' }) {
+  // A burst only on the way to "done" — un-checking stays quiet.
+  const [burst, setBurst] = useState(null);
+  const ref = useRef(null);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (!checked && !prefersReducedMotion()) {
+      const seed = Math.random() * 360;
+      setBurst({
+        key: Date.now(),
+        sparks: Array.from({ length: SPARKS }, (_, i) => ({
+          a: `${seed + (360 / SPARKS) * i + (Math.random() * 18 - 9)}deg`,
+          d: `${16 + Math.random() * 14}px`,
+        })),
+      });
+      setTimeout(() => setBurst(null), 700);
+    }
+    onChange?.(!checked);
+  };
+
   return (
     <button
+      ref={ref}
       type="button"
       role="checkbox"
       aria-checked={!!checked}
       aria-label={label}
       disabled={disabled}
       className={`check check-${size} check-${shape} ${checked ? 'is-checked' : ''} ${className}`}
-      onClick={(e) => { e.stopPropagation(); onChange?.(!checked); }}
+      onClick={handleClick}
     >
       <svg viewBox="0 0 16 16" aria-hidden="true">
         <path d="M4 8.4 6.7 11 12 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
+      {burst && (
+        <span className="burst" key={burst.key} aria-hidden="true">
+          {burst.sparks.map((s, i) => <i key={i} style={{ '--a': s.a, '--d': s.d }} />)}
+        </span>
+      )}
     </button>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   RollingNumber — each digit is a column that rolls to its value, columns a
+   beat apart. The real value stays readable to assistive tech.
+   -------------------------------------------------------------------------- */
+export function RollingNumber({ value, className = '' }) {
+  const text = String(value);
+  const [shown, setShown] = useState(() => (prefersReducedMotion() ? text : text.replace(/\d/g, '0')));
+  useEffect(() => {
+    // Mount at zero, then roll to the value on the next frame.
+    const id = requestAnimationFrame(() => setShown(text));
+    const fallback = setTimeout(() => setShown(text), 120);
+    return () => { cancelAnimationFrame(id); clearTimeout(fallback); };
+  }, [text]);
+
+  let col = 0;
+  return (
+    <span className={`roll ${className}`}>
+      <span className="sr-only">{text}</span>
+      <span className="roll-digits" aria-hidden="true">
+        {[...text].map((ch, i) => {
+          if (!/\d/.test(ch)) return <span key={`s${i}`}>{ch}</span>;
+          const target = /\d/.test(shown[i] || '') ? Number(shown[i]) : 0;
+          const delay = (col++) * 60;
+          return (
+            <span key={`d${i}`} className="roll-col">
+              <span className="roll-strip" style={{ transform: `translateY(${-target}em)`, transitionDelay: `${delay}ms` }}>
+                {Array.from({ length: 10 }, (_, n) => <span key={n}>{n}</span>)}
+              </span>
+            </span>
+          );
+        })}
+      </span>
+    </span>
   );
 }
 
@@ -96,7 +161,7 @@ export function ProgressRing({ value, max = 1, size = 44, stroke = 4, label, chi
 /* --------------------------------------------------------------------------
    Segmented control (single choice). Arrow keys move the selection.
    -------------------------------------------------------------------------- */
-export function Segmented({ value, onChange, options, label, size = 'md' }) {
+export function Segmented({ value, onChange, options, label, size = 'md', disabled = false }) {
   const refs = useRef([]);
   const onKeyDown = (e, i) => {
     let next = null;
@@ -108,7 +173,7 @@ export function Segmented({ value, onChange, options, label, size = 'md' }) {
     refs.current[next]?.focus();
   };
   return (
-    <div className={`segmented segmented-${size}`} role="radiogroup" aria-label={label}>
+    <div className={`segmented segmented-${size} ${disabled ? 'is-disabled' : ''}`} role="radiogroup" aria-label={label} aria-disabled={disabled || undefined}>
       {options.map((opt, i) => {
         const selected = opt.value === value;
         const Icon = opt.icon;
@@ -120,6 +185,7 @@ export function Segmented({ value, onChange, options, label, size = 'md' }) {
             role="radio"
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
+            disabled={disabled}
             className={`segmented-item ${selected ? 'is-selected' : ''}`}
             onClick={() => onChange(opt.value)}
             onKeyDown={(e) => onKeyDown(e, i)}

@@ -56,6 +56,7 @@ export function formatDate(dateStr) {
  * Legacy keys (e.g. "ocean") are mapped in resolveAccent().
  */
 export const ACCENT_THEMES = {
+  ember: { name: 'Ember', swatch: '#e0822f' },
   cobalt: { name: 'Cobalt', swatch: '#2c5be0' },
   indigo: { name: 'Indigo', swatch: '#5146d8' },
   teal: { name: 'Teal', swatch: '#0e7469' },
@@ -69,5 +70,5 @@ const LEGACY_ACCENTS = { ocean: 'cobalt' };
 
 export function resolveAccent(key) {
   if (ACCENT_THEMES[key]) return key;
-  return LEGACY_ACCENTS[key] || 'cobalt';
+  return LEGACY_ACCENTS[key] || 'ember';
 }

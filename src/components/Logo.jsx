@@ -7,13 +7,13 @@ export default function Logo({ size = 24, className = '', style = {} }) {
       width={size}
       height={size}
       fill="currentColor"
-      className={className}
+      className={`logo ${className}`}
       style={{ display: "inline-block", verticalAlign: "middle", ...style }}
       aria-hidden="true"
       focusable="false"
     >
       {/* Padlock Shackle */}
-      <path d="M256 32c-79.5 0-144 64.5-144 144v80h48v-80c0-53 43-96 96-96s96 43 96 96v80h48v-80c0-79.5-64.5-144-144-144z" />
+      <path className="logo-shackle" d="M256 32c-79.5 0-144 64.5-144 144v80h48v-80c0-53 43-96 96-96s96 43 96 96v80h48v-80c0-79.5-64.5-144-144-144z" />
       
       {/* Padlock Body */}
       <rect x="48" y="208" width="416" height="272" rx="64" ry="64" />
