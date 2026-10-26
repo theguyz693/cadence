@@ -1,0 +1,12 @@
+{
+  "name": "cadence-demo-video",
+  "private": true,
+  "type": "module",
+  "description": "Records the Cadence demo walkthrough to cadence-demo.mp4",
+  "scripts": {
+    "record": "node record.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.56.1"
+  }
+}
