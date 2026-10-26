@@ -65,12 +65,16 @@ await context.addInitScript(() => {
       .__demo_ripple { position: fixed; z-index: 2147483646; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
         border: 2px solid rgba(7,76,224,.85); pointer-events: none; animation: __rip 520ms ease-out forwards; }
       @keyframes __rip { from { transform: scale(.3); opacity: 1 } to { transform: scale(1.5); opacity: 0 } }
-      #__demo_caption { position: fixed; z-index: 2147483645; left: 50%; bottom: 34px; transform: translate(-50%, 16px); opacity: 0;
-        padding: 12px 22px; border-radius: 14px; background: rgba(14,16,20,.86); color: #fff; pointer-events: none;
-        font: 600 19px/1.25 'Host Grotesk', 'Instrument Sans', system-ui, sans-serif; letter-spacing: -.01em; white-space: nowrap;
-        box-shadow: 0 12px 34px -10px rgba(0,0,0,.5); transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.8,.2,1); }
+      #__demo_caption { position: fixed; z-index: 2147483645; left: 50%; bottom: 46px; transform: translate(-50%, 18px); opacity: 0;
+        min-width: 640px; max-width: 1500px; padding: 24px 44px 28px; border-radius: 24px; text-align: center; pointer-events: none;
+        background: rgba(12, 14, 18, .94); color: #fff;
+        box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 24px 60px -16px rgba(0,0,0,.6);
+        font-family: 'Host Grotesk', 'Instrument Sans', system-ui, sans-serif;
+        transition: opacity 280ms ease, transform 360ms cubic-bezier(.2,.8,.2,1); }
       #__demo_caption.on { opacity: 1; transform: translate(-50%, 0); }
-      #__demo_caption small { display: block; margin-top: 3px; font-weight: 500; font-size: 14px; color: rgba(255,255,255,.7); }
+      #__demo_caption .k { display: block; margin-bottom: 10px; font-size: 17px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #8fb0ff; }
+      #__demo_caption .t { display: block; font-size: 50px; line-height: 1.1; font-weight: 700; letter-spacing: -.03em; white-space: nowrap; }
+      #__demo_caption .s { display: block; margin-top: 10px; font-size: 24px; line-height: 1.35; font-weight: 500; color: rgba(255,255,255,.74); white-space: nowrap; }
       #__demo_end { position: fixed; inset: 0; z-index: 2147483644; display: grid; place-items: center; background: #fcfcfd; opacity: 0;
         transition: opacity 600ms ease; pointer-events: none; font-family: 'Host Grotesk', system-ui, sans-serif; color: #16191f; text-align: center; }
       #__demo_end.on { opacity: 1; }
@@ -104,12 +108,15 @@ await context.addInitScript(() => {
     }, true);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install); else install();
-  window.__caption = (t, sub) => {
+  window.__caption = (t, sub, kicker) => {
     const cap = document.getElementById('__demo_caption');
     if (!cap) return;
+    const fill = () => {
+      cap.innerHTML = (kicker ? `<span class="k">${kicker}</span>` : '') + `<span class="t">${t}</span>` + (sub ? `<span class="s">${sub}</span>` : '');
+      cap.classList.add('on');
+    };
     if (!t) { cap.classList.remove('on'); return; }
-    cap.innerHTML = t + (sub ? `<small>${sub}</small>` : '');
-    cap.classList.add('on');
+    if (cap.classList.contains('on')) { cap.classList.remove('on'); setTimeout(fill, 260); } else fill();
   };
   window.__end = (html) => {
     const e = document.getElementById('__demo_end'); e.innerHTML = html; e.classList.add('on');
@@ -118,6 +125,7 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
+page.setDefaultTimeout(8000);
 const cdp = await context.newCDPSession(page);
 const frames = [];
 let n = 0;
@@ -131,7 +139,7 @@ cdp.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
 const sleep = ms => page.waitForTimeout(ms);
 let mouse = { x: W / 2, y: H / 2 };
 async function moveTo(x, y, ms = 650) {
-  const steps = Math.max(12, Math.round(ms / 16));
+  const steps = Math.max(10, Math.round(ms / 28));
   const sx = mouse.x, sy = mouse.y;
   for (let i = 1; i <= steps; i++) {
     const t = i / steps, e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -154,7 +162,18 @@ async function click(locator, { ms = 650, after = 500 } = {}) {
   await page.mouse.down(); await sleep(70); await page.mouse.up();
   await sleep(after);
 }
-const caption = (t, sub) => page.evaluate(([t, s]) => window.__caption(t, s), [t, sub]);
+const caption = (t, sub, kicker) => page.evaluate(([t, s, k]) => window.__caption(t, s, k), [t, sub, kicker]);
+async function dragRange(locator, fraction, ms = 900) {
+  const el = locator.first();
+  await el.scrollIntoViewIfNeeded();
+  const b = await el.boundingBox();
+  const val = await el.evaluate(e => (e.value - e.min) / (e.max - e.min));
+  const y = b.y + b.height / 2;
+  await moveTo(b.x + b.width * val, y, 500);
+  await page.mouse.down();
+  await moveTo(b.x + b.width * fraction, y, ms);
+  await page.mouse.up();
+}
 async function smoothScroll(y, ms = 1200) {
   await page.evaluate(([y, ms]) => new Promise(res => {
     const start = scrollY, d = y - start, t0 = performance.now();
@@ -184,118 +203,79 @@ const t0 = Date.now();
 
 // 1. Landing
 await page.mouse.move(mouse.x, mouse.y);
-await sleep(1800);
-await caption('Cadence', 'Routines, tasks and focus — in one calm place');
-await sleep(2200);
-await smoothScroll(760, 1600);
-await sleep(1400);
-await caption('Routines on any 1–20 day cycle', 'Tap the days to try it right on the page');
-const playDays = page.locator('.playground [aria-label^="Day "]');
-if (await playDays.count()) {
-  await click(playDays.nth(3), { after: 450 });
-  await click(playDays.nth(4), { after: 900 });
-}
-await smoothScroll(0, 1200);
-await caption('Light or dark', null);
-await click(page.locator('[aria-label^="Switch to"]'), { after: 1500 });
-await click(page.locator('[aria-label^="Switch to"]'), { after: 1100 });
-await caption(null);
+await sleep(900);
+await caption('Cadence', 'Routines, tasks, calendar and focus — in one calm place', 'Meet');
+await sleep(2600);
+await click(page.locator('[aria-label^="Switch to"]'), { ms: 550, after: 1300 });
+await click(page.locator('[aria-label^="Switch to"]'), { ms: 300, after: 700 });
 
 // 2. Into the demo
-await click(page.getByRole('button', { name: 'Try the demo' }).or(page.getByRole('link', { name: 'Try the demo' })), { after: 400 });
+await caption('Your whole day on one screen', 'Routines, tasks, goals and events — and what to do next', 'Today');
+await click(page.getByRole('button', { name: 'Try the demo' }).or(page.getByRole('link', { name: 'Try the demo' })), { ms: 550, after: 300 });
 await page.waitForSelector('.today-header', { timeout: 15000 });
-await sleep(1600);
-await caption('Today', 'Everything due today, plus what to do next');
-await sleep(2200);
-
-// Complete a routine
+await sleep(1700);
 const check = page.locator('[aria-label^="Complete "][aria-label$=" for today"]');
-if (await check.count()) {
-  await caption('Check things off', 'Progress updates as you go');
-  await click(check.first(), { after: 1600 });
-}
+if (await check.count()) await click(check.first(), { ms: 550, after: 1100 });
 
-// Smart add
-await scrollEl('#today-quick-add', 900);
-await sleep(300);
-await caption('Add anything in plain English', 'Dates, times and repeats are understood as you type');
-await click(page.locator('#today-quick-add'), { after: 300 });
-await page.keyboard.type('Call mom tomorrow 6pm', { delay: 75 });
-await sleep(1500);
+// 3. Quick add
+await scrollEl('#today-quick-add', 700);
+await caption('Type it the way you’d say it', 'Cadence works out the date, the time and whether it repeats', '01 · Quick add');
+await click(page.locator('#today-quick-add'), { ms: 500, after: 200 });
+await page.keyboard.type('Call mom tomorrow 6pm', { delay: 45 });
+await sleep(1300);
 await page.keyboard.press('Enter');
-await sleep(1200);
-await page.keyboard.type('gym mon wed fri 7am', { delay: 70 });
-await sleep(1800);
+await sleep(900);
+await page.keyboard.type('gym mon wed fri 7am', { delay: 45 });
+await sleep(1600);
 await page.keyboard.press('Escape');
 await page.evaluate(() => document.activeElement?.blur());
-await smoothScroll(0, 900);
-await caption(null);
 
-// 3. Routines
-await click(page.locator('.sidebar .nav-item', { hasText: 'Routines' }), { after: 900 });
-await caption('Routines that keep their rhythm', 'Push / Pull / Legs, every other day, or every day');
+// 4. Calendar + integrations
+await click(page.locator('.sidebar .nav-item', { hasText: 'Calendar' }), { ms: 600, after: 500 });
+await caption('A calendar that already knows your week', 'Routines, timed tasks and your other calendars, side by side', '02 · Calendar');
 await sleep(2600);
+await click(page.locator('.sidebar .nav-item', { hasText: 'Settings' }), { ms: 600, after: 300 });
+await scrollEl('#s-calendars', 800);
+await caption('Works with Google, Outlook and Apple', 'Paste a calendar link to bring it in — or subscribe to Cadence from them', '02 · Calendar sync');
+await point(page.locator('.settings-section:has(#s-calendars) input[placeholder^="https://calendar.google.com"]'), 600);
+await sleep(1500);
+await point(page.locator('.settings-section:has(#s-calendars) .settings-row-label', { hasText: 'Show Cadence in your calendar' }), 600);
+await sleep(1500);
 
-// 4. Calendar
-await click(page.locator('.sidebar .nav-item', { hasText: 'Calendar' }), { after: 900 });
-await caption('A built-in calendar', 'Import Google, Outlook or Apple calendars by link');
-await sleep(2600);
-await caption(null);
-
-// 5. Lock In
-await click(page.locator('.sidebar .lockin-launch'), { after: 700 });
-await caption('Lock In', 'A distraction-free focus timer');
-const opt = page.locator('.dialog button', { hasText: 'Read 20 pages' });
-if (await opt.count()) await click(opt, { after: 400 });
-await click(page.locator('.dialog button', { hasText: 'Start session' }), { after: 400 });
-await sleep(3800);
-await click(page.locator('.focus-mode button', { hasText: 'Pause' }), { after: 1200 });
-await click(page.locator('.focus-mode button', { hasText: 'Resume' }), { after: 900 });
-await caption(null);
-await click(page.locator('.focus-mode button', { hasText: 'End' }), { after: 500 });
-await click(page.locator('.focus-confirm button', { hasText: 'End session' }), { after: 900 });
-
-// 6. Themes
-await click(page.locator('.sidebar .nav-item', { hasText: 'Settings' }), { after: 700 });
-await scrollEl('.theme-picker', 1000);
-await sleep(500);
-await caption('Nine themes', 'Same app, completely different feel');
-for (const name of ['Cyberpunk', 'Claymorphism', 'Organic', 'Playful', 'Sketch', 'Industrial', 'Retro']) {
-  await click(page.locator('.theme-card', { hasText: name }), { ms: 500, after: 1500 });
+// 5. Themes
+await scrollEl('.theme-picker', 800);
+await caption('Nine themes, one click', 'Every screen restyles itself — even the focus clock', '03 · Themes');
+for (const name of ['Cyberpunk', 'Claymorphism', 'Sketch', 'Retro', 'Industrial']) {
+  await click(page.locator('.theme-card', { hasText: name }), { ms: 380, after: 1150 });
 }
-await caption(null);
+await click(page.locator('.theme-card', { hasText: 'Cadence' }), { ms: 380, after: 900 });
 
-// Show a couple of themed screens
-await click(page.locator('.sidebar .nav-item', { hasText: 'Today' }), { after: 800 });
-await caption('Retro', null);
+// 6. Animated background
+await caption('Set the mood', 'Built-in animated scenes behind the app — blur and dim to taste', '04 · Ambient background');
+await click(page.locator('[role="switch"][aria-label="Ambient background"]'), { ms: 500, after: 300 });
+// lower blur first: a blurred full-screen animation is slow to render headless
+await dragRange(page.locator('#ambient-blur'), 0.05, 450);
+await dragRange(page.locator('#ambient-dim'), 0.4, 400);
+for (const name of ['Aurora', 'Dusk']) {
+  await click(page.locator('.scene-card', { hasText: name }), { ms: 380, after: 1100 });
+}
+await click(page.locator('.sidebar .nav-item', { hasText: 'Today' }), { ms: 500, after: 300 });
+await smoothScroll(0, 300);
 await sleep(2000);
-await click(page.locator('.sidebar .lockin-launch'), { after: 600 });
-const opt2 = page.locator('.dialog button', { hasText: 'Strength training' });
-if (await opt2.count()) await click(opt2, { after: 300 });
-await click(page.locator('.dialog button', { hasText: 'Start session' }), { after: 400 });
-await caption('Even the clock changes', null);
-await sleep(2600);
-await caption(null);
-await click(page.locator('.focus-mode button', { hasText: 'End' }), { after: 500 });
-await click(page.locator('.focus-confirm button', { hasText: 'End session' }), { after: 700 });
 
-await click(page.locator('.sidebar .nav-item', { hasText: 'Settings' }), { after: 600 });
-await scrollEl('.theme-picker', 800);
-await click(page.locator('.theme-card', { hasText: 'Sketch' }), { ms: 500, after: 600 });
-await click(page.locator('.sidebar .nav-item', { hasText: 'Today' }), { after: 600 });
-await caption('Sketch', null);
-await sleep(2000);
-await click(page.locator('.sidebar .nav-item', { hasText: 'Settings' }), { after: 600 });
-await scrollEl('.theme-picker', 800);
-await click(page.locator('.theme-card', { hasText: 'Cyberpunk' }), { ms: 500, after: 600 });
-await click(page.locator('.sidebar .nav-item', { hasText: 'Today' }), { after: 600 });
-await caption('Cyberpunk', null);
-await sleep(2000);
+// 7. Lock In
+await caption('Then lock in', 'A distraction-free focus timer, one key away', '05 · Focus');
+await click(page.locator('.sidebar .lockin-launch'), { ms: 550, after: 400 });
+const opt = page.locator('.dialog button', { hasText: 'Read 20 pages' });
+if (await opt.count()) await click(opt, { ms: 450, after: 250 });
+await click(page.locator('.dialog button', { hasText: 'Start session' }), { ms: 450, after: 300 });
+await sleep(3000);
 await caption(null);
+await sleep(300);
 
 // End card
 await moveTo(W + 40, H / 2, 500);
-await page.evaluate(() => window.__end('<div><h1>Cadence</h1><p>Keep a rhythm that fits real life.</p><span class="url">cadence-delta-five.vercel.app</span></div>'));
+await page.evaluate(() => window.__end('<div><h1>Cadence</h1><p>Keep a rhythm that fits real life. Free demo, no sign-up.</p><span class="url">cadence-delta-five.vercel.app</span></div>'));
 await sleep(3500);
 
 const tStop = Date.now() / 1000;
