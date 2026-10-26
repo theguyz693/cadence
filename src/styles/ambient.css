@@ -1,0 +1,73 @@
+/* ==========================================================================
+   Ambient scenes (components/AmbientScene.jsx). Transform/opacity-only
+   animations on a fixed layer; the Blur and Dim settings sit on top.
+   ========================================================================== */
+.ambient-scene { position: absolute; inset: -40px; filter: blur(calc(var(--ambient-blur, 25px) * 0.35)); }
+.scene { position: absolute; inset: 0; overflow: hidden; contain: strict; }
+.scene i { position: absolute; display: block; will-change: transform; }
+
+/* Aurora: four huge soft blobs drifting on long, offset loops */
+.scene-aurora { background: linear-gradient(160deg, #0d1b3a, #1b1240 55%, #0a2a3a); }
+.scene-aurora .blob { width: 62%; aspect-ratio: 1; border-radius: 50%; opacity: 0.85; mix-blend-mode: screen; }
+.scene-aurora .b1 { left: -12%; top: -18%; background: radial-gradient(closest-side, #2ee6c5, transparent); animation: aurora-a 26s ease-in-out infinite alternate; }
+.scene-aurora .b2 { right: -14%; top: 4%; background: radial-gradient(closest-side, #7a5cff, transparent); animation: aurora-b 32s ease-in-out infinite alternate; }
+.scene-aurora .b3 { left: 18%; bottom: -30%; background: radial-gradient(closest-side, #ff6fb1, transparent); opacity: 0.6; animation: aurora-c 38s ease-in-out infinite alternate; }
+.scene-aurora .b4 { right: 10%; bottom: -20%; background: radial-gradient(closest-side, #3d8bff, transparent); animation: aurora-a 30s ease-in-out -12s infinite alternate-reverse; }
+@keyframes aurora-a { to { transform: translate(18%, 14%) scale(1.15); } }
+@keyframes aurora-b { to { transform: translate(-22%, 18%) scale(0.9); } }
+@keyframes aurora-c { to { transform: translate(16%, -22%) scale(1.2); } }
+
+/* Dusk: gradient sky, a breathing sun, clouds crossing, a dark ridge */
+.scene-dusk { background: linear-gradient(#2a2457 0%, #6c3f7a 38%, #e0786a 70%, #f6c178 100%); }
+.scene-dusk .sun { left: 50%; top: 52%; width: 30%; aspect-ratio: 1; margin-left: -15%; border-radius: 50%;
+  background: radial-gradient(closest-side, #fff1c2, #ffb46b 55%, rgba(255, 140, 90, 0) 72%); animation: dusk-sun 9s ease-in-out infinite alternate; }
+.scene-dusk .cloud { height: 9%; border-radius: 999px; background: rgba(255, 214, 200, 0.42); }
+.scene-dusk .c1 { top: 22%; left: -40%; width: 38%; animation: dusk-cloud 70s linear infinite; }
+.scene-dusk .c2 { top: 36%; left: -40%; width: 26%; opacity: 0.7; animation: dusk-cloud 95s linear -40s infinite; }
+.scene-dusk .c3 { top: 14%; left: -40%; width: 20%; opacity: 0.5; animation: dusk-cloud 120s linear -80s infinite; }
+.scene-dusk .hills { left: -10%; right: -10%; bottom: -6%; height: 30%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; background: #2b1d3d; }
+@keyframes dusk-sun { from { transform: translateY(4%) scale(0.96); } to { transform: translateY(-4%) scale(1.06); } }
+@keyframes dusk-cloud { to { transform: translateX(380%); } }
+
+/* Tide: three wave strips, each 2× wide, sliding one tile at different speeds */
+.scene-tide { background: linear-gradient(#0f3d5c, #1b6f8a 55%, #6fc3c9); }
+.scene-tide .wave { position: absolute; left: 0; width: 200%; height: 34%; fill: currentColor; will-change: transform; }
+.scene-tide .w1 { bottom: 26%; color: rgba(140, 220, 230, 0.35); animation: tide 22s linear infinite; }
+.scene-tide .w2 { bottom: 12%; color: rgba(90, 190, 210, 0.5); animation: tide 15s linear -6s infinite reverse; }
+.scene-tide .w3 { bottom: -4%; color: rgba(16, 70, 100, 0.85); animation: tide 10s linear infinite; }
+@keyframes tide { to { transform: translateX(-50%); } }
+
+/* Fireflies: small warm lights drifting up and pulsing */
+.scene-fireflies { background: radial-gradient(120% 90% at 50% 100%, #19402f, #0b1d1e 60%, #070f14); }
+.scene-fireflies .fly { left: var(--x); top: var(--y); width: var(--s); height: var(--s); border-radius: 50%;
+  background: #ffe78a; box-shadow: 0 0 calc(var(--s) * 2.5) calc(var(--s) * 0.8) rgba(255, 220, 110, 0.55);
+  animation: fly var(--d) ease-in-out var(--delay) infinite; }
+@keyframes fly {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 1; }
+  50% { transform: translate(var(--dx), var(--dy)); opacity: 0.35; }
+  80% { opacity: 0.9; }
+}
+
+/* Mini previews in Settings: same scenes, no blur, sped up a little */
+.scene.is-mini { position: absolute; inset: 0; border-radius: inherit; }
+.scene.is-mini.scene-fireflies .fly { width: 3px; height: 3px; box-shadow: 0 0 5px 2px rgba(255, 220, 110, 0.55); }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene i, .scene .wave { animation: none !important; }
+  .scene-fireflies .fly { opacity: 0.7; }
+}
+
+/* Scene picker (Settings) */
+.scene-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; width: 100%; }
+.scene-card { display: flex; flex-direction: column; gap: 7px; padding: 0; text-align: left; border-radius: var(--radius-md); color: var(--text); }
+.scene-card-art { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--radius-md);
+  background: var(--bg-sunken) center / cover no-repeat; box-shadow: inset 0 0 0 1px var(--border); }
+.scene-card-art .scene-random { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
+.scene-card-art .scene-random > span { position: relative; overflow: hidden; }
+.scene-card-name { padding: 0 2px; font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.scene-card.is-selected .scene-card-art { box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--bg-app); }
+.scene-card:focus-visible { outline: none; }
+.scene-card:focus-visible .scene-card-art { box-shadow: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--accent); }
+.scene-card-check { position: absolute; right: 6px; top: 6px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-fg); }

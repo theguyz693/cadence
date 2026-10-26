@@ -11,6 +11,8 @@ import { MOD_KEY } from '../components/Layout.jsx';
 import CalendarSettings from '../components/CalendarSettings.jsx';
 import { revealTheme, revealAppearance } from '../utils/themeReveal.js';
 import { UI_THEMES, resolveUiTheme } from '../utils/uiThemes.js';
+import { SCENES, cleanSlots } from '../utils/ambient.js';
+import AmbientScene from '../components/AmbientScene.jsx';
 
 const DEFAULT_FOCUS_SOUNDS = [
   { id: 'sound_1', name: 'Deep Focus Ambient', src: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', type: 'preset', isDefault: true },
@@ -69,7 +71,7 @@ export default function Settings() {
   const bgBlur = settings.bgBlur ?? 25;
   const bgDim = settings.bgDim ?? 60;
   const activeBackground = settings.activeBackground || 'random';
-  const customBackgrounds = settings.customBackgrounds || [];
+  const customBackgrounds = cleanSlots(settings.customBackgrounds);
 
   const focusSounds = settings.focusSounds || DEFAULT_FOCUS_SOUNDS;
   const defaultSoundId = settings.defaultSoundId || focusSounds[0]?.id;
@@ -276,15 +278,37 @@ export default function Settings() {
           </Row>
           {ambientOn && (
             <>
-              <Row label="Scene" htmlFor="ambient-source">
-                <select id="ambient-source" className="input select input-sm" value={activeBackground} onChange={e => updateSettings({ activeBackground: e.target.value })}>
-                  <option value="random">Random preset</option>
-                  {customBackgrounds.map(bg => (
-                    <option key={bg.id} value={bg.id} disabled={!bg.url}>{bg.name || bg.id}{bg.url ? '' : ' (empty)'}</option>
-                  ))}
-                </select>
+              <Row label="Scene" description="Built in and animated — nothing to download." stacked>
+                <div className="scene-picker" role="radiogroup" aria-label="Ambient scene">
+                  {[
+                    { value: 'random', name: 'Surprise me', art: (
+                      <span className="scene-random">{SCENES.map(sc => <span key={sc.id}><AmbientScene id={sc.id} mini /></span>)}</span>
+                    ) },
+                    ...SCENES.map(sc => ({ value: `scene:${sc.id}`, name: sc.name, title: sc.description, art: <AmbientScene id={sc.id} mini /> })),
+                    ...customBackgrounds.filter(bg => bg.url).map((bg, i) => ({ value: bg.id, name: bg.name || `My scene ${i + 1}`, image: bg.url })),
+                  ].map(opt => {
+                    const selected = activeBackground === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        title={opt.title}
+                        className={`scene-card ${selected ? 'is-selected' : ''}`}
+                        onClick={() => updateSettings({ activeBackground: opt.value })}
+                      >
+                        <span className="scene-card-art" style={opt.image ? { backgroundImage: `url(${opt.image})` } : undefined} aria-hidden="true">
+                          {opt.art}
+                          {selected && <span className="scene-card-check"><Check size={12} strokeWidth={3} /></span>}
+                        </span>
+                        <span className="scene-card-name">{opt.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </Row>
-              <Row label="Saved scenes" description="Paste a link to a looping GIF or image. Changes save automatically." stacked>
+              <Row label="Your own scenes" description="Paste a link to a looping GIF or image and it joins the list above. Changes save automatically." stacked>
                 <div className="stack gap-2 w-full">
                   {customBackgrounds.map(bg => (
                     <div key={bg.id} className="scene-row">

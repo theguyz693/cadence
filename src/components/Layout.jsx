@@ -12,26 +12,15 @@ import Menu from './ui/Menu.jsx';
 import Logo from './Logo.jsx';
 import { isRoutineActiveToday, isRoutineCompletedOn } from '../utils/recurrence.js';
 import { getTaskDue } from '../utils/dates.js';
-
-const BACKGROUND_GIFS = [
-  'https://media.giphy.com/media/l0HlS53Vd2eK2WvSw/giphy.gif',
-  'https://media.giphy.com/media/VPlgUzkP5yPba/giphy.gif',
-  'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif',
-  'https://media.giphy.com/media/43F752JzgNn44/giphy.gif',
-  'https://media.giphy.com/media/jP4pKgC0Q2Tpa2k4p8/giphy.gif',
-];
+import { resolveAmbient, randomSceneId } from '../utils/ambient.js';
+import AmbientScene from './AmbientScene.jsx';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 export const MOD_KEY = isMac ? '⌘' : 'Ctrl';
 
 function useAmbientBackground(settings) {
-  const enabled = settings?.showBanner === true;
-  const active = settings?.activeBackground || 'random';
-  const slots = settings?.customBackgrounds || [];
-  const [randomUrl] = useState(() => BACKGROUND_GIFS[Math.floor(Math.random() * BACKGROUND_GIFS.length)]);
-  if (!enabled) return null;
-  if (active === 'random') return randomUrl;
-  return slots.find(s => s.id === active)?.url || randomUrl;
+  const [randomScene] = useState(randomSceneId);
+  return resolveAmbient(settings, randomScene);
 }
 
 /**
@@ -64,7 +53,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const [retrying, setRetrying] = useState(false);
 
-  const ambientUrl = useAmbientBackground(state.settings);
+  const ambient = useAmbientBackground(state.settings);
   const navRef = useRef(null);
   const indicator = useNavIndicator(navRef, location.pathname);
 
@@ -125,12 +114,14 @@ export default function Layout({ children }) {
   const initial = (user?.username || '?').slice(0, 1).toUpperCase();
 
   return (
-    <div className={`shell ${ambientUrl ? 'has-ambient' : ''}`}>
+    <div className={`shell ${ambient ? 'has-ambient' : ''}`}>
       <a href="#main" className="skip-link">Skip to content</a>
 
-      {ambientUrl && (
+      {ambient && (
         <div className="ambient" aria-hidden="true">
-          <div className="ambient-image" style={{ backgroundImage: `url(${ambientUrl})` }} />
+          {ambient.kind === 'scene'
+            ? <div className="ambient-scene"><AmbientScene id={ambient.id} /></div>
+            : <div className="ambient-image" style={{ backgroundImage: `url(${ambient.url})` }} />}
           <div className="ambient-dim" />
         </div>
       )}

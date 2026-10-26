@@ -22,14 +22,14 @@ const defaultData = () => ({
     uiTheme: 'standard',
     accentColor: 'ember',
     showBanner: false,
-    bannerUrl: 'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif',
+    bannerUrl: '',
     bgBlur: 25,
     bgDim: 60,
     activeBackground: 'random',
     customBackgrounds: [
-      { id: 'slot1', name: 'Cozy Cafe', url: 'https://media.giphy.com/media/XIqCQx02E1U9W/giphy.gif' },
-      { id: 'slot2', name: 'Pixel Cat', url: 'https://media.giphy.com/media/VPlgUzkP5yPba/giphy.gif' },
-      { id: 'slot3', name: 'Sunset Train', url: 'https://media.giphy.com/media/43F752JzgNn44/giphy.gif' }
+      { id: 'slot1', name: '', url: '' },
+      { id: 'slot2', name: '', url: '' },
+      { id: 'slot3', name: '', url: '' }
     ],
     focusSounds: DEFAULT_FOCUS_SOUNDS,
     defaultSoundId: 'sound_1',
