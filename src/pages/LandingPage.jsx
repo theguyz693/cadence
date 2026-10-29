@@ -272,11 +272,29 @@ function LockInFilm() {
   useEffect(() => {
     const v = ref.current;
     if (!v || !('IntersectionObserver' in window) || prefersReducedMotion()) return undefined;
+    // Plays once and rests on the "LOCK IN." title; the clip's final frames fade to black,
+    // so it stops at HOLD instead of its true end. Scrolling back never restarts it.
+    const HOLD = 2.25;
+    let finished = false;
+    const hold = () => { finished = true; v.pause(); v.currentTime = HOLD; };
+    let raf = 0;
+    const watch = () => {
+      if (v.currentTime >= HOLD) { hold(); return; }
+      raf = requestAnimationFrame(watch);
+    };
+    const onPlay = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(watch); };
+    v.addEventListener('play', onPlay);
+    v.addEventListener('ended', hold);
     const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) v.play().catch(() => {}); else v.pause();
+      if (e.isIntersecting) { if (!finished) v.play().catch(() => {}); } else v.pause();
     }, { threshold: 0.4 });
     io.observe(v);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(raf);
+      v.removeEventListener('play', onPlay);
+      v.removeEventListener('ended', hold);
+    };
   }, []);
   return (
     <div className="film">
@@ -287,7 +305,6 @@ function LockInFilm() {
         poster="/video-poster.jpg"
         muted
         playsInline
-        loop
         preload="metadata"
         aria-label="Lock In: a short title animation"
       />
